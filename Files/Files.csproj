@@ -266,6 +266,10 @@
     <Compile Include="UserControls\InnerNavigationToolbar.xaml.cs">
       <DependentUpon>InnerNavigationToolbar.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\MultitaskingControl\AppInstance.cs" />
+    <Compile Include="UserControls\MultitaskingControl\AppInstanceGroup.cs" />
+    <Compile Include="UserControls\MultitaskingControl\AppInstanceInformation.cs" />
+    <Compile Include="UserControls\MultitaskingControl\IAppInstance.cs" />
     <Compile Include="UserControls\PathBreadcrumb.xaml.cs">
       <DependentUpon>PathBreadcrumb.xaml</DependentUpon>
     </Compile>
@@ -321,9 +325,6 @@
     </Compile>
     <Compile Include="UserControls\FilePreviews\TextPreview.xaml.cs">
       <DependentUpon>TextPreview.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserControls\MultitaskingControl\TabItem\TabItemControl.xaml.cs">
-      <DependentUpon>TabItemControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserControls\SearchBox.xaml.cs">
       <DependentUpon>SearchBox.xaml</DependentUpon>
@@ -483,7 +484,6 @@
     <Compile Include="DataModels\NavigationControlItems\DriveItem.cs" />
     <Compile Include="Filesystem\Drives.cs" />
     <Compile Include="UserControls\MultitaskingControl\TabItem\ITabItem.cs" />
-    <Compile Include="UserControls\MultitaskingControl\TabItem\ITabItemControl.cs" />
     <Compile Include="UserControls\Selection\RectangleSelection.cs" />
     <Compile Include="UserControls\Selection\RectangleSelection_ListViewBase.cs" />
     <Compile Include="UserControls\SidebarControl.xaml.cs">
@@ -495,7 +495,6 @@
     <Compile Include="UserControls\StatusCenter.xaml.cs">
       <DependentUpon>StatusCenter.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserControls\MultitaskingControl\TabItem\TabItem.cs" />
     <Compile Include="UserControls\MultitaskingControl\VerticalTabViewControl.xaml.cs">
       <DependentUpon>VerticalTabViewControl.xaml</DependentUpon>
     </Compile>
@@ -1115,6 +1114,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="ResourceDictionaries\TabView_horizontal.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ResourceDictionaries\TabView_vertical.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -1212,10 +1215,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserControls\MultitaskingControl\HorizontalMultitaskingControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserControls\MultitaskingControl\TabItem\TabItemControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

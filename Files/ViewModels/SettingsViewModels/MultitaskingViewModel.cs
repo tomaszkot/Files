@@ -20,8 +20,8 @@ namespace Files.ViewModels.SettingsViewModels
             }
         }
 
-        private bool isDualPaneEnabled = App.AppSettings.IsDualPaneEnabled;
-        private bool alwaysOpenDualPaneInNewTab = App.AppSettings.AlwaysOpenDualPaneInNewTab;
+        private bool isDualPaneEnabled = App.AppSettings.IsMultiPaneEnabled;
+        private bool alwaysOpenDualPaneInNewTab = App.AppSettings.AlwaysOpenMaxPanesWithNewTab;
 
         public bool IsDualPaneEnabled
         {
@@ -33,7 +33,7 @@ namespace Files.ViewModels.SettingsViewModels
             {
                 if (SetProperty(ref isDualPaneEnabled, value))
                 {
-                    App.AppSettings.IsDualPaneEnabled = value;
+                    App.AppSettings.IsMultiPaneEnabled = value;
                 }
             }
         }
@@ -48,7 +48,7 @@ namespace Files.ViewModels.SettingsViewModels
             {
                 if (SetProperty(ref alwaysOpenDualPaneInNewTab, value))
                 {
-                    App.AppSettings.AlwaysOpenDualPaneInNewTab = value;
+                    App.AppSettings.AlwaysOpenMaxPanesWithNewTab = value;
                 }
             }
         }

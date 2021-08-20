@@ -813,7 +813,7 @@ namespace Files.ViewModels
                         if (resFile)
                         {
                             var pathToInvoke = resFile.Result.Path;
-                            await Win32Helpers.InvokeWin32ComponentAsync(pathToInvoke, shellPage);
+                            await Win32Helpers.InvokeWin32ComponentAsync(pathToInvoke, shellPage.AppInstanceInfo);
                         }
                         else // Not a file or not accessible
                         {

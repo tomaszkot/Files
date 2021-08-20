@@ -9,6 +9,7 @@ using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -32,7 +33,7 @@ namespace Files.UserControls.MultitaskingControl
         {
             if (args.CollectionChange == Windows.Foundation.Collections.CollectionChange.ItemRemoved)
             {
-                App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(HorizontalTabView.SelectedItem as TabItem);
+                App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(HorizontalTabView.SelectedItem as IAppInstance);
             }
 
             if (App.MainViewModel.TabStripSelectedIndex >= 0 && App.MainViewModel.TabStripSelectedIndex < Items.Count)
@@ -44,7 +45,6 @@ namespace Files.UserControls.MultitaskingControl
                     OnCurrentInstanceChanged(new CurrentInstanceChangedEventArgs()
                     {
                         CurrentInstance = CurrentSelectedAppInstance,
-                        PageInstances = GetAllTabInstances()
                     });
                 }
             }
@@ -52,14 +52,14 @@ namespace Files.UserControls.MultitaskingControl
 
         private async void TabViewItem_Drop(object sender, DragEventArgs e)
         {
-            e.AcceptedOperation = await ((sender as TabViewItem).DataContext as TabItem).Control.TabItemContent.TabItemDrop(sender, e);
+            e.AcceptedOperation = await ((sender as TabViewItem).DataContext as IAppInstance).TabItemDrop(sender, e);
             HorizontalTabView.CanReorderTabs = true;
             tabHoverTimer.Stop();
         }
 
         private void TabViewItem_DragEnter(object sender, DragEventArgs e)
         {
-            e.AcceptedOperation = ((sender as TabViewItem).DataContext as TabItem).Control.TabItemContent.TabItemDragOver(sender, e);
+            e.AcceptedOperation = ((sender as TabViewItem).DataContext as IAppInstance).TabItemDragOver(sender, e);
             if (e.AcceptedOperation != DataPackageOperation.None)
             {
                 HorizontalTabView.CanReorderTabs = false;
@@ -80,15 +80,16 @@ namespace Files.UserControls.MultitaskingControl
             tabHoverTimer.Stop();
             if (hoveredTabViewItem != null)
             {
-                App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(hoveredTabViewItem.DataContext as TabItem);
+                App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(hoveredTabViewItem.DataContext as IAppInstance);
             }
         }
 
         private void TabStrip_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
         {
-            var tabViewItemArgs = (args.Item as TabItem).TabItemArguments;
-            args.Data.Properties.Add(TabPathIdentifier, tabViewItemArgs.Serialize());
-            args.Data.RequestedOperation = DataPackageOperation.Move;
+            // TODO: Serialize AppInstance
+            //var tabViewItemArgs = (args.Item as IAppInstance).TabItemArguments;
+            //args.Data.Properties.Add(TabPathIdentifier, tabViewItemArgs.Serialize());
+            //args.Data.RequestedOperation = DataPackageOperation.Move;
         }
 
         private void TabStrip_TabStripDragOver(object sender, DragEventArgs e)
@@ -148,7 +149,7 @@ namespace Files.UserControls.MultitaskingControl
             if (ApplicationData.Current.LocalSettings.Values.ContainsKey(TabDropHandledIdentifier) &&
                 (bool)ApplicationData.Current.LocalSettings.Values[TabDropHandledIdentifier])
             {
-                CloseTab(args.Item as TabItem);
+                CloseTab(args.Item as IAppInstance);
             }
             else
             {
@@ -163,20 +164,21 @@ namespace Files.UserControls.MultitaskingControl
 
         private async void TabStrip_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
         {
-            if (sender.TabItems.Count == 1)
-            {
-                return;
-            }
+            // TODO: Serialize AppInstances
+            //if (sender.TabItems.Count == 1)
+            //{
+            //    return;
+            //}
 
-            var indexOfTabViewItem = sender.TabItems.IndexOf(args.Tab);
-            var tabViewItemArgs = (args.Item as TabItem).TabItemArguments;
-            var selectedTabViewItemIndex = sender.SelectedIndex;
-            CloseTab(args.Item as TabItem);
-            if (!await NavigationHelpers.OpenTabInNewWindowAsync(tabViewItemArgs.Serialize()))
-            {
-                sender.TabItems.Insert(indexOfTabViewItem, args.Tab);
-                sender.SelectedIndex = selectedTabViewItemIndex;
-            }
+            //var indexOfTabViewItem = sender.TabItems.IndexOf(args.Tab);
+            //var tabViewItemArgs = (args.Item as IAppInstance).TabItemArguments;
+            //var selectedTabViewItemIndex = sender.SelectedIndex;
+            //CloseTab(args.Item as IAppInstance);
+            //if (!await NavigationHelpers.OpenTabInNewWindowAsync(tabViewItemArgs.Serialize()))
+            //{
+            //    sender.TabItems.Insert(indexOfTabViewItem, args.Tab);
+            //    sender.SelectedIndex = selectedTabViewItemIndex;
+            //}
         }
 
         private void TabItemContextMenu_Opening(object sender, object e)
@@ -187,7 +189,7 @@ namespace Files.UserControls.MultitaskingControl
 
         private void MenuItemCloseTabsToTheRight_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-            TabItem tabItem = args.NewValue as TabItem;
+            IAppInstance tabItem = args.NewValue as IAppInstance;
 
             if (MainPageViewModel.AppInstances.IndexOf(tabItem) == MainPageViewModel.AppInstances.Count - 1)
             {
@@ -199,7 +201,7 @@ namespace Files.UserControls.MultitaskingControl
             }
         }
 
-        public override DependencyObject ContainerFromItem(ITabItem item) => HorizontalTabView.ContainerFromItem(item);
+        public override DependencyObject ContainerFromItem(IAppInstance item) => HorizontalTabView.ContainerFromItem(item);
 
 
 
@@ -230,11 +232,36 @@ namespace Files.UserControls.MultitaskingControl
         private void TabViewItem_Loaded(object sender, RoutedEventArgs e)
         {
             // fixes issue where tab would not show as selected when opened with path argument
-            if(firstLoad)
+            if (firstLoad)
             {
                 firstLoad = false;
                 (sender as TabViewItem).IsSelected = true;
             }
+        }
+
+        private void HorizontalTabView_TabSelectionChanged(object sender, CurrentInstanceChangedEventArgs e)
+        {
+            TabStrip_SelectionChanged(null, null);
+        }
+    }
+
+    public class TabViewItemContentSelector : DataTemplateSelector
+    {
+        public DataTemplate SingleInstanceTemplate { get; set; }
+        public DataTemplate InstanceGroupTemplate { get; set; }
+
+        protected override DataTemplate SelectTemplateCore(object item)
+        {
+            if (item is AppInstance)
+            {
+                return SingleInstanceTemplate;
+            }
+            else if (item is AppInstanceGroup)
+            {
+                return InstanceGroupTemplate;
+            }
+
+            return null;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Files.EventArguments.Bundles;
 using Files.Helpers;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels.Widgets;
 using Files.ViewModels.Widgets.Bundles;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
@@ -58,7 +59,10 @@ namespace Files.ViewModels.Pages
 
         private void BundlesViewModel_OpenPathInNewPaneEvent(object sender, string e)
         {
-            associatedInstance.PaneHolder.OpenPathInNewPane(e);
+            if (!string.IsNullOrWhiteSpace(e) && associatedInstance.AppInstanceInfo.AppInstance is AppInstanceGroup group)
+            {
+                group.AddAppInstanceByArguments(new TabItemArguments(e));
+            }
         }
 
         private async void BundlesViewModel_OpenPathEvent(object sender, BundlesOpenPathEventArgs e)

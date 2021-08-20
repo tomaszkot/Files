@@ -10,6 +10,8 @@ namespace Files
 {
     public interface IBaseLayout : IDisposable
     {
+        ItemManipulationModel ItemManipulationModel { get; }
+
         bool IsRenamingItem { get; }
 
         bool IsItemSelected { get; }
@@ -19,8 +21,6 @@ namespace Files
         public List<ListedItem> SelectedItems { get; }
 
         public ListedItem SelectedItem { get; }
-
-        ItemManipulationModel ItemManipulationModel { get; }
 
         PreviewPaneViewModel PreviewPaneViewModel { get; }
 

@@ -4,6 +4,7 @@ using Files.Extensions;
 using Files.Filesystem.FilesystemHistory;
 using Files.Helpers;
 using Files.Interacts;
+using Files.UserControls.MultitaskingControl;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -21,9 +22,9 @@ namespace Files.Filesystem
     {
         #region Private Members
 
-        private IShellPage associatedInstance;
+        private AppInstanceInformation associatedInstance;
 
-        private ItemManipulationModel itemManipulationModel => associatedInstance.SlimContentPage?.ItemManipulationModel;
+        private ItemManipulationModel itemManipulationModel => associatedInstance.SlimContentPage.ItemManipulationModel;
 
         private FilesystemOperations filesystemOperations;
 
@@ -33,7 +34,7 @@ namespace Files.Filesystem
 
         #region Constructor
 
-        public ShellFilesystemOperations(IShellPage associatedInstance)
+        public ShellFilesystemOperations(AppInstanceInformation associatedInstance)
         {
             this.associatedInstance = associatedInstance;
             filesystemOperations = new FilesystemOperations(associatedInstance);

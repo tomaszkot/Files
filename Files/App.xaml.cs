@@ -370,21 +370,22 @@ namespace Files
 
         public static void SaveSessionTabs() // Enumerates through all tabs and gets the Path property and saves it to AppSettings.LastSessionPages
         {
-            if (AppSettings != null)
-            {
-                AppSettings.LastSessionPages = MainPageViewModel.AppInstances.DefaultIfEmpty().Select(tab =>
-                {
-                    if (tab != null && tab.TabItemArguments != null)
-                    {
-                        return tab.TabItemArguments.Serialize();
-                    }
-                    else
-                    {
-                        var defaultArg = new TabItemArguments() { InitialPageType = typeof(PaneHolderPage), NavigationArg = "NewTab".GetLocalized() };
-                        return defaultArg.Serialize();
-                    }
-                }).ToArray();
-            }
+            // TODO: Serialize AppInstances themselves
+            //if (AppSettings != null)
+            //{
+            //    AppSettings.LastSessionPages = MainPageViewModel.AppInstances.DefaultIfEmpty().Select(tab =>
+            //    {
+            //        if (tab != null)
+            //        {
+            //            return tab.TabItemArguments.Serialize();
+            //        }
+            //        else
+            //        {
+            //            var defaultArg = new TabItemArguments() { InitialPageType = typeof(PaneHolderPage), NavigationArg = "NewTab".GetLocalized() };
+            //            return defaultArg.Serialize();
+            //        }
+            //    }).ToArray();
+            //}
         }
 
         // Occurs when an exception is not handled on the UI thread.

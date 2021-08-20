@@ -31,7 +31,7 @@ namespace Files.Filesystem.FilesystemHistory
         {
             this.associatedInstance = associatedInstance;
             this.cancellationToken = cancellationToken;
-            filesystemOperations = new ShellFilesystemOperations(associatedInstance);
+            filesystemOperations = new ShellFilesystemOperations(associatedInstance.AppInstanceInfo);
             filesystemHelpers = this.associatedInstance.FilesystemHelpers;
         }
 

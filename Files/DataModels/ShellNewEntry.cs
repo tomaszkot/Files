@@ -1,4 +1,5 @@
 ﻿using Files.Filesystem;
+using Files.UserControls.MultitaskingControl;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Files.DataModels
         public byte[] Data { get; set; }
         public string Template { get; set; }
 
-        public async Task<FilesystemResult<StorageFile>> Create(string filePath, IShellPage associatedInstance)
+        public async Task<FilesystemResult<StorageFile>> Create(string filePath, AppInstanceInformation associatedInstance)
         {
             var parentFolder = await associatedInstance.FilesystemViewModel.GetFolderFromPathAsync(Path.GetDirectoryName(filePath));
             if (parentFolder)

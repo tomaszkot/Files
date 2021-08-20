@@ -75,7 +75,7 @@ namespace Files.ViewModels.Widgets.Bundles
 
         public bool OpenInNewPaneLoad
         {
-            get => App.AppSettings.IsDualPaneEnabled && TargetType == FilesystemItemType.Directory;
+            get => App.AppSettings.IsMultiPaneEnabled && TargetType == FilesystemItemType.Directory;
         }
 
         #endregion Public Properties

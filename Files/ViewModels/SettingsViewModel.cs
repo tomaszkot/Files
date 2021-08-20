@@ -73,8 +73,8 @@ namespace Files.ViewModels
             Analytics.TrackEvent($"{nameof(ShowFileExtensions)} {ShowFileExtensions}");
             Analytics.TrackEvent($"{nameof(ShowConfirmDeleteDialog)} {ShowConfirmDeleteDialog}");
             Analytics.TrackEvent($"{nameof(IsVerticalTabFlyoutEnabled)} {IsVerticalTabFlyoutEnabled}");
-            Analytics.TrackEvent($"{nameof(IsDualPaneEnabled)} {IsDualPaneEnabled}");
-            Analytics.TrackEvent($"{nameof(AlwaysOpenDualPaneInNewTab)} {AlwaysOpenDualPaneInNewTab}");
+            Analytics.TrackEvent($"{nameof(IsMultiPaneEnabled)} {IsMultiPaneEnabled}");
+            Analytics.TrackEvent($"{nameof(AlwaysOpenMaxPanesWithNewTab)} {AlwaysOpenMaxPanesWithNewTab}");
             Analytics.TrackEvent($"{nameof(AreHiddenItemsVisible)} {AreHiddenItemsVisible}");
             Analytics.TrackEvent($"{nameof(AreLayoutPreferencesPerFolder)} {AreLayoutPreferencesPerFolder}");
             Analytics.TrackEvent($"{nameof(ShowDrivesWidget)} {ShowDrivesWidget}");
@@ -386,7 +386,7 @@ namespace Files.ViewModels
         /// <summary>
         /// Gets or sets a value indicating whether or not to enable dual pane feature.
         /// </summary>
-        public bool IsDualPaneEnabled
+        public bool IsMultiPaneEnabled
         {
             get => Get(false);
             set => Set(value);
@@ -395,7 +395,7 @@ namespace Files.ViewModels
         /// <summary>
         /// Gets or sets a value indicating whether or not to always open a second pane when opening a new tab.
         /// </summary>
-        public bool AlwaysOpenDualPaneInNewTab
+        public bool AlwaysOpenMaxPanesWithNewTab
         {
             get => Get(false);
             set => Set(value);

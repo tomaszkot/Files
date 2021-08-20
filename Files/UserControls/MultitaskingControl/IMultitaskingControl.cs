@@ -6,21 +6,18 @@ namespace Files.UserControls.MultitaskingControl
 {
     public interface IMultitaskingControl
     {
-        public event EventHandler<CurrentInstanceChangedEventArgs> CurrentInstanceChanged;
+        public event EventHandler<CurrentInstanceChangedEventArgs> TabSelectionChanged;
 
-        public ObservableCollection<TabItem> Items { get; }
+        public ObservableCollection<IAppInstance> Items { get; }
 
         public ITabItemContent GetCurrentSelectedTabInstance();
 
-        public List<ITabItemContent> GetAllTabInstances();
-
-        public void CloseTab(TabItem tabItem);
-        public void SetLoadingIndicatorStatus(ITabItem item, bool loading);
+        public void CloseTab(IAppInstance IAppInstance);
+        public void SetLoadingIndicatorStatus(IAppInstance item, bool loading);
     }
 
     public class CurrentInstanceChangedEventArgs : EventArgs
     {
         public ITabItemContent CurrentInstance { get; set; }
-        public List<ITabItemContent> PageInstances { get; set; }
     }
 }

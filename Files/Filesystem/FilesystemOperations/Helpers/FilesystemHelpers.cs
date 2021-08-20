@@ -6,6 +6,7 @@ using Files.Extensions;
 using Files.Filesystem.FilesystemHistory;
 using Files.Helpers;
 using Files.Interacts;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.ViewModels.Dialogs;
 using Microsoft.Toolkit.Uwp;
@@ -32,11 +33,13 @@ namespace Files.Filesystem
     {
         #region Private Members
 
-        private IShellPage associatedInstance;
+        private AppInstanceInformation instanceInformation;
 
+        public IShellPage ShellPageInstance { get; set; }
+ 
         private IFilesystemOperations filesystemOperations;
 
-        private ItemManipulationModel itemManipulationModel => associatedInstance.SlimContentPage?.ItemManipulationModel;
+        private ItemManipulationModel itemManipulationModel => instanceInformation.SlimContentPage.ItemManipulationModel;
 
         private RecycleBinHelpers recycleBinHelpers;
 
@@ -65,11 +68,11 @@ namespace Files.Filesystem
 
         #region Constructor
 
-        public FilesystemHelpers(IShellPage associatedInstance, CancellationToken cancellationToken)
+        public FilesystemHelpers(AppInstanceInformation associatedInstance, CancellationToken cancellationToken)
         {
-            this.associatedInstance = associatedInstance;
+            this.instanceInformation = associatedInstance;
             this.cancellationToken = cancellationToken;
-            this.filesystemOperations = new ShellFilesystemOperations(this.associatedInstance);
+            this.filesystemOperations = new ShellFilesystemOperations(this.instanceInformation);
             this.recycleBinHelpers = new RecycleBinHelpers();
         }
 
@@ -118,7 +121,7 @@ namespace Files.Filesystem
                     var srcPath = source.ElementAt(i).Path ?? source.ElementAt(i).Item.Path;
                     if (recycleBinHelpers.IsPathUnderRecycleBin(srcPath))
                     {
-                        var binItems = associatedInstance.FilesystemViewModel.FilesAndFolders;
+                        var binItems = instanceInformation.FilesystemViewModel.FilesAndFolders;
                         var matchingItem = binItems.FirstOrDefault(x => x.ItemPath == srcPath); // Get original file name
                         incomingItems.Add(new FilesystemItemsOperationItemModel(FilesystemOperationType.Delete, srcPath, null, matchingItem?.ItemName));
                     }
@@ -279,7 +282,7 @@ namespace Files.Filesystem
             if (permanently)
             {
                 banner = statusCenterViewModel.PostBanner(string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Delete);
@@ -287,7 +290,7 @@ namespace Files.Filesystem
             else
             {
                 banner = statusCenterViewModel.PostBanner(string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Recycle);
@@ -304,7 +307,7 @@ namespace Files.Filesystem
                 var srcPath = source.Path ?? source.Item.Path;
                 if (recycleBinHelpers.IsPathUnderRecycleBin(srcPath))
                 {
-                    var binItems = associatedInstance.FilesystemViewModel.FilesAndFolders;
+                    var binItems = instanceInformation.FilesystemViewModel.FilesAndFolders;
                     var matchingItem = binItems.FirstOrDefault(x => x.ItemPath == srcPath); // Get original file name
                     incomingItems.Add(new FilesystemItemsOperationItemModel(FilesystemOperationType.Delete, srcPath, null, matchingItem?.ItemName));
                 }
@@ -353,7 +356,7 @@ namespace Files.Filesystem
             banner.Remove();
             sw.Stop();
 
-            PostBannerHelpers.PostBanner_Delete(returnStatus, permanently ? FileOperationType.Delete : FileOperationType.Recycle, sw, associatedInstance);
+            PostBannerHelpers.PostBanner_Delete(returnStatus, permanently ? FileOperationType.Delete : FileOperationType.Recycle, sw, instanceInformation);
             return returnStatus;
         }
 
@@ -376,7 +379,7 @@ namespace Files.Filesystem
             if (permanently)
             {
                 banner = statusCenterViewModel.PostBanner(string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Delete);
@@ -384,7 +387,7 @@ namespace Files.Filesystem
             else
             {
                 banner = statusCenterViewModel.PostBanner(string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Recycle);
@@ -440,7 +443,7 @@ namespace Files.Filesystem
             banner.Remove();
             sw.Stop();
 
-            PostBannerHelpers.PostBanner_Delete(returnStatus, permanently ? FileOperationType.Delete : FileOperationType.Recycle, sw, associatedInstance);
+            PostBannerHelpers.PostBanner_Delete(returnStatus, permanently ? FileOperationType.Delete : FileOperationType.Recycle, sw, instanceInformation);
 
             return returnStatus;
         }
@@ -495,7 +498,7 @@ namespace Files.Filesystem
                     if (isTargetExecutable)
                     {
                         var items = await packageView.GetStorageItemsAsync();
-                        NavigationHelpers.OpenItemsWithExecutable(associatedInstance, items.ToList(), destination);
+                        NavigationHelpers.OpenItemsWithExecutable(ShellPageInstance, items.ToList(), destination);
                     }
 
                     // TODO: Support link creation
@@ -599,7 +602,7 @@ namespace Files.Filesystem
         {
             PostedStatusBanner banner = statusCenterViewModel.PostBanner(
                 string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Copy);
@@ -702,7 +705,7 @@ namespace Files.Filesystem
                         var (status, response) = await connection.SendMessageForResponseAsync(new ValueSet() {
                             { "Arguments", "FileOperation" },
                             { "fileop", "DragDrop" },
-                            { "droppath", associatedInstance.FilesystemViewModel.WorkingDirectory } });
+                            { "droppath", instanceInformation.FilesystemViewModel.WorkingDirectory } });
                         return (status == AppServiceResponseStatus.Success && response.Get("Success", false)) ? ReturnResult.Success : ReturnResult.Failed;
                     }
                     return ReturnResult.Failed;
@@ -851,7 +854,7 @@ namespace Files.Filesystem
         {
             PostedStatusBanner banner = statusCenterViewModel.PostBanner(
                 string.Empty,
-                associatedInstance.FilesystemViewModel.WorkingDirectory,
+                instanceInformation.FilesystemViewModel.WorkingDirectory,
                 0,
                 ReturnResult.InProgress,
                 FileOperationType.Move);
@@ -1258,7 +1261,7 @@ namespace Files.Filesystem
         {
             filesystemOperations?.Dispose();
 
-            associatedInstance = null;
+            instanceInformation = null;
             filesystemOperations = null;
             recycleBinHelpers = null;
         }

@@ -30,14 +30,17 @@ namespace Files.ViewModels
         public IMultitaskingControl MultitaskingControl { get; set; }
         public List<IMultitaskingControl> MultitaskingControls { get; } = new List<IMultitaskingControl>();
 
-        public static ObservableCollection<TabItem> AppInstances { get; private set; } = new ObservableCollection<TabItem>();
+        public static ObservableCollection<IAppInstance> AppInstances { get; private set; } = new ObservableCollection<IAppInstance>();
 
-        private TabItem selectedTabItem;
+        private IAppInstance selectedTabItem;
 
-        public TabItem SelectedTabItem
+        public IAppInstance SelectedTabItem
         {
             get => selectedTabItem;
-            set => SetProperty(ref selectedTabItem, value);
+            set 
+            { 
+                SetProperty(ref selectedTabItem, value); 
+            }
         }
 
         public ICommand NavigateToNumberedTabKeyboardAcceleratorCommand { get; private set; }
@@ -150,12 +153,12 @@ namespace Files.ViewModels
         {
             if (App.MainViewModel.TabStripSelectedIndex >= AppInstances.Count)
             {
-                TabItem tabItem = AppInstances[AppInstances.Count - 1];
+                IAppInstance tabItem = AppInstances[AppInstances.Count - 1];
                 MultitaskingControl?.CloseTab(tabItem);
             }
             else
             {
-                TabItem tabItem = AppInstances[App.MainViewModel.TabStripSelectedIndex];
+                IAppInstance tabItem = AppInstances[App.MainViewModel.TabStripSelectedIndex];
                 MultitaskingControl?.CloseTab(tabItem);
             }
             e.Handled = true;
@@ -182,45 +185,35 @@ namespace Files.ViewModels
             {
                 path = "NewTab".GetLocalized();
             }
+            var id = Guid.NewGuid();
 
-            TabItem tabItem = new TabItem()
+            if (type == typeof(PaneHolderPage))
             {
-                Header = null,
-                IconSource = null,
-                Description = null
-            };
-            tabItem.Control.NavigationArguments = new TabItemArguments()
-            {
-                InitialPageType = type,
-                NavigationArg = path
-            };
-            tabItem.Control.ContentChanged += Control_ContentChanged;
-            await UpdateTabInfo(tabItem, path);
-            var index = atIndex == -1 ? AppInstances.Count : atIndex;
-            AppInstances.Insert(index, tabItem);
-            App.MainViewModel.TabStripSelectedIndex = index;
-        }
+                var appInstance = new AppInstanceGroup(null, null, new TabItemArguments()
+                {
+                    InitialPageType = type,
+                    NavigationArg = path,
+                    InstanceId = id
+                });
 
-        public static async Task UpdateTabInfo(TabItem tabItem, object navigationArg)
-        {
-            tabItem.AllowStorageItemDrop = true;
-            if (navigationArg is PaneNavigationArguments paneArgs)
-            {
-                if (!string.IsNullOrEmpty(paneArgs.LeftPaneNavPathParam) && !string.IsNullOrEmpty(paneArgs.RightPaneNavPathParam))
-                {
-                    var leftTabInfo = await GetSelectedTabInfoAsync(paneArgs.LeftPaneNavPathParam);
-                    var rightTabInfo = await GetSelectedTabInfoAsync(paneArgs.RightPaneNavPathParam);
-                    tabItem.Header = $"{leftTabInfo.tabLocationHeader} | {rightTabInfo.tabLocationHeader}";
-                    tabItem.IconSource = leftTabInfo.tabIcon;
-                }
-                else
-                {
-                    (tabItem.Header, tabItem.IconSource) = await GetSelectedTabInfoAsync(paneArgs.LeftPaneNavPathParam);
-                }
+                appInstance.UpdateTabInfo();
+                var index = atIndex == -1 ? AppInstances.Count : atIndex;
+                AppInstances.Insert(index, appInstance);
+                App.MainViewModel.TabStripSelectedIndex = index;
             }
-            else if (navigationArg is string pathArgs)
+            else
             {
-                (tabItem.Header, tabItem.IconSource) = await GetSelectedTabInfoAsync(pathArgs);
+                var appInstance = new AppInstance(null, null, new TabItemArguments()
+                {
+                    InitialPageType = type,
+                    NavigationArg = path,
+                    InstanceId = id
+                });
+
+                appInstance.UpdateTabInfo();
+                var index = atIndex == -1 ? AppInstances.Count : atIndex;
+                AppInstances.Insert(index, appInstance);
+                App.MainViewModel.TabStripSelectedIndex = index;
             }
         }
 
@@ -427,49 +420,47 @@ namespace Files.ViewModels
 
         public static async void DuplicateTabAtIndex(object sender, RoutedEventArgs e)
         {
-            var tabItem = ((FrameworkElement)sender).DataContext as TabItem;
+            var tabItem = ((FrameworkElement)sender).DataContext as IAppInstance;
             var index = AppInstances.IndexOf(tabItem);
 
-            if (AppInstances[index].TabItemArguments != null)
-            {
-                var tabArgs = AppInstances[index].TabItemArguments;
-                await AddNewTabByParam(tabArgs.InitialPageType, tabArgs.NavigationArg, index + 1);
-            }
-            else
-            {
-                await AddNewTabByPathAsync(typeof(PaneHolderPage), "NewTab".GetLocalized());
-            }
+            AppInstances.Insert(index + 1, tabItem);
         }
 
-        public static async Task AddNewTabByParam(Type type, object tabViewItemArgs, int atIndex = -1)
+        public static async Task AddNewTabByParam(Type type, string tabViewItemArgs, int atIndex = -1)
         {
             Microsoft.UI.Xaml.Controls.FontIconSource fontIconSource = new Microsoft.UI.Xaml.Controls.FontIconSource();
             fontIconSource.FontFamily = App.MainViewModel.FontName;
 
-            TabItem tabItem = new TabItem()
-            {
-                Header = null,
-                IconSource = fontIconSource,
-                Description = null
-            };
-            tabItem.Control.NavigationArguments = new TabItemArguments()
-            {
-                InitialPageType = type,
-                NavigationArg = tabViewItemArgs
-            };
-            tabItem.Control.ContentChanged += Control_ContentChanged;
-            await UpdateTabInfo(tabItem, tabViewItemArgs);
-            AppInstances.Insert(atIndex == -1 ? AppInstances.Count : atIndex, tabItem);
-        }
+            Guid id = Guid.NewGuid();
 
-        public static async void Control_ContentChanged(object sender, TabItemArguments e)
-        {
-            TabItem matchingTabItem = MainPageViewModel.AppInstances.SingleOrDefault(x => x.Control == sender);
-            if (matchingTabItem == null)
+            if (type == typeof(PaneHolderPage))
             {
-                return;
+                var appInstance = new AppInstanceGroup(null, null, new TabItemArguments()
+                {
+                    InitialPageType = type,
+                    NavigationArg = tabViewItemArgs,
+                    InstanceId = id
+                });
+
+                appInstance.UpdateTabInfo();
+                var index = atIndex == -1 ? AppInstances.Count : atIndex;
+                AppInstances.Insert(index, appInstance);
+                App.MainViewModel.TabStripSelectedIndex = index;
             }
-            await UpdateTabInfo(matchingTabItem, e.NavigationArg);
+            else
+            {
+                var appInstance = new AppInstance(null, null, new TabItemArguments()
+                {
+                    InitialPageType = type,
+                    NavigationArg = tabViewItemArgs,
+                    InstanceId = id
+                });
+
+                appInstance.UpdateTabInfo();
+                var index = atIndex == -1 ? AppInstances.Count : atIndex;
+                AppInstances.Insert(index, appInstance);
+                App.MainViewModel.TabStripSelectedIndex = index;
+            }
         }
 
         private async void StartAppCenter()

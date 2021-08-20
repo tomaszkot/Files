@@ -25,74 +25,74 @@
     </Page.DataContext>
     <Page.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+                            <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
 
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+                            <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
 
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="HighContrast">
+                            <SolidColorBrush x:Key="SidebarBorderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+                            <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
 
-            <x:Boolean x:Key="True">True</x:Boolean>
-            <x:Boolean x:Key="False">False</x:Boolean>
+                    <x:Boolean x:Key="True">True</x:Boolean>
+                    <x:Boolean x:Key="False">False</x:Boolean>
 
-            <Style x:Key="DefaultGridSplitterStyle" TargetType="Custom:GridSplitter">
-                <Setter Property="IsTabStop" Value="True" />
-                <Setter Property="UseSystemFocusVisuals" Value="True" />
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="IsFocusEngagementEnabled" Value="True" />
-                <Setter Property="MinWidth" Value="2" />
-                <Setter Property="MinHeight" Value="2" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="GripperForeground" Value="Transparent" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Custom:GridSplitter">
-                            <Grid
+                    <Style x:Key="DefaultGridSplitterStyle" TargetType="Custom:GridSplitter">
+                        <Setter Property="IsTabStop" Value="True" />
+                        <Setter Property="UseSystemFocusVisuals" Value="True" />
+                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                        <Setter Property="IsFocusEngagementEnabled" Value="True" />
+                        <Setter Property="MinWidth" Value="2" />
+                        <Setter Property="MinHeight" Value="2" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="GripperForeground" Value="Transparent" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Custom:GridSplitter">
+                                    <Grid
                                 x:Name="RootGrid"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="1,0,0,0">
-                                <ContentPresenter
+                                        <ContentPresenter
                                     HorizontalContentAlignment="Stretch"
                                     VerticalContentAlignment="Stretch"
                                     Content="{TemplateBinding Element}" />
-                                <VisualStateManager.VisualStateGroups>
-                                    <VisualStateGroup x:Name="GridSplitterStates">
-                                        <VisualState x:Name="Normal" />
-                                        <VisualState x:Name="PointerOver">
-                                            <VisualState.Setters>
-                                                <Setter Target="RootGrid.Background" Value="Transparent" />
-                                            </VisualState.Setters>
-                                        </VisualState>
-                                        <VisualState x:Name="Pressed">
-                                            <VisualState.Setters>
-                                                <Setter Target="RootGrid.Background" Value="Transparent" />
-                                            </VisualState.Setters>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                </VisualStateManager.VisualStateGroups>
-                            </Grid>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-            <converters:WidthToRightMargin x:Key="WidthToRightMarginConverter" />
-            <converters1:BoolNegationConverter x:Key="BoolNegationConverter" />
-        </ResourceDictionary>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="GridSplitterStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <VisualState.Setters>
+                                                        <Setter Target="RootGrid.Background" Value="Transparent" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed">
+                                                    <VisualState.Setters>
+                                                        <Setter Target="RootGrid.Background" Value="Transparent" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <converters:WidthToRightMargin x:Key="WidthToRightMarginConverter" />
+                    <converters1:BoolNegationConverter x:Key="BoolNegationConverter" />
+                </ResourceDictionary>
     </Page.Resources>
     <Page.KeyboardAccelerators>
         <KeyboardAccelerator Key="Number1" Modifiers="Control">
@@ -262,6 +262,7 @@
                 VerticalAlignment="Top"
                 BorderBrush="{ThemeResource ControlStrokeColorDefault}"
                 BorderThickness="0,0,0,1">
+                
                 <Grid.RowDefinitions>
                     <RowDefinition Height="50" />
                     <RowDefinition Height="Auto" />
@@ -283,26 +284,36 @@
                     Background="Transparent"
                     Loaded="DragArea_Loaded" />
 
-                <usercontrols:HorizontalMultitaskingControl
-                    x:Name="horizontalMultitaskingControl"
+                <Grid 
                     Grid.Column="1"
                     Height="50"
                     HorizontalAlignment="Left"
-                    VerticalAlignment="Stretch"
-                    x:FieldModifier="public"
-                    x:Load="False"
-                    Loaded="HorizontalMultitaskingControl_Loaded"
-                    TabStripVisibility="Visible"
-                    Visibility="Visible">
-                    <usercontrols:HorizontalMultitaskingControl.ActionsControl>
-                        <StackPanel
+                    VerticalAlignment="Stretch">
+                    <Grid.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.MergedDictionaries>
+                                <ResourceDictionary Source="/ResourceDictionaries/TabView_horizontal.xaml" />
+                                <ResourceDictionary Source="/ResourceDictionaries/TabView_vertical.xaml" />
+                            </ResourceDictionary.MergedDictionaries>
+                        </ResourceDictionary>
+                    </Grid.Resources>
+                    <usercontrols:HorizontalMultitaskingControl
+                        x:Name="horizontalMultitaskingControl"
+                        x:FieldModifier="public"
+                        x:Load="False"
+                        Style="{StaticResource DefaultTabViewStyle}"
+                        Loaded="HorizontalMultitaskingControl_Loaded"
+                        TabStripVisibility="Visible"
+                        Visibility="Visible">
+                        <usercontrols:HorizontalMultitaskingControl.ActionsControl>
+                            <StackPanel
                             x:Name="ActionButtonsPanel"
                             Grid.Column="1"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Stretch"
                             Orientation="Horizontal"
                             Spacing="4">
-                            <Button
+                                <Button
                                 x:Name="HorizontalMultitaskingControlAddButton"
                                 x:Uid="HorizontalMultitaskingControlAddButton"
                                 Width="32"
@@ -314,14 +325,14 @@
                                 BorderThickness="0"
                                 Click="{x:Bind ViewModel.AddNewTab, Mode=OneWay}"
                                 ToolTipService.ToolTip="New tab (Ctrl+T)">
-                                <Button.Content>
-                                    <FontIcon
+                                    <Button.Content>
+                                        <FontIcon
                                         x:Name="HorizontalMultitaskingControlAddButtonIcon"
                                         FontSize="12"
                                         Glyph="&#xE710;" />
-                                </Button.Content>
-                            </Button>
-                            <Button
+                                    </Button.Content>
+                                </Button>
+                                <Button
                                 x:Name="VerticalTabStripInvokeButton"
                                 x:Uid="VerticalTabFlyout"
                                 Width="32"
@@ -340,29 +351,31 @@
                                 Loaded="VerticalTabStripInvokeButton_Loaded"
                                 Tapped="VerticalTabStrip_Tapped"
                                 ToolTipService.ToolTip="Vertical tab flyout">
-                                <Button.Content>
-                                    <FontIcon
+                                    <Button.Content>
+                                        <FontIcon
                                         x:Name="VerticalTabStripInvokeButtonIcon"
                                         FontSize="12"
                                         Glyph="&#xF5ED;" />
-                                </Button.Content>
-                                <Button.Flyout>
-                                    <Flyout
+                                    </Button.Content>
+                                    <Button.Flyout>
+                                        <Flyout
                                         x:Name="VerticalTabViewFlyout"
                                         Placement="Bottom"
                                         ShouldConstrainToRootBounds="False">
-                                        <usercontrols:VerticalTabViewControl
+                                            <usercontrols:VerticalTabViewControl
                                             x:Name="VerticalTabs"
+                                            Style="{StaticResource VerticalTabViewStyle}"
                                             HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
                                             x:FieldModifier="public" />
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
-                        </StackPanel>
-                    </usercontrols:HorizontalMultitaskingControl.ActionsControl>
-                </usercontrols:HorizontalMultitaskingControl>
-
+                                        </Flyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </StackPanel>
+                        </usercontrols:HorizontalMultitaskingControl.ActionsControl>
+                    </usercontrols:HorizontalMultitaskingControl>
+                </Grid>
+                
                 <controls:NavigationToolbar
                     x:Name="NavToolbar"
                     Grid.Row="1"
@@ -413,11 +426,12 @@
                 SetCompactOverlayCommand="{x:Bind SetCompactOverlayCommand}"
                 ShowPreviewPaneButton="{x:Bind IsPreviewPaneDisabled, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
 
-            <ContentPresenter
+            <ContentControl
                 Grid.Row="1"
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"
-                Content="{x:Bind ((viewmodels:MainPageViewModel)DataContext).SelectedTabItem.Control, Mode=OneWay}" />
+                ContentTemplate="{x:Bind SelectedTabViewItem.ContentTemplate, Mode=OneWay}"
+                Content="{x:Bind SelectedTabViewItem.Content, Mode=OneWay}" />
 
             <Custom:DropShadowPanel
                 x:Name="PreviewPaneDropShadowPanel"

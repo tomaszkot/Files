@@ -4,33 +4,36 @@ using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.Views;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Files
 {
     public interface IShellPage : ITabItemContent, IMultiPaneInfo, IDisposable
     {
-        ItemViewModel FilesystemViewModel { get; }
-
-        CurrentInstanceViewModel InstanceViewModel { get; }
+        public AppInstanceInformation AppInstanceInfo { get; set; }
 
         IBaseLayout SlimContentPage { get; }
 
-        Type CurrentPageType { get; }
+        BaseLayout ContentPage { get; }
 
-        IFilesystemHelpers FilesystemHelpers { get; }
+        FilesystemHelpers FilesystemHelpers { get; }
+
+        CurrentInstanceViewModel InstanceViewModel { get; }
+
+        ItemViewModel FilesystemViewModel { get; }
 
         NavToolbarViewModel NavToolbarViewModel { get; }
 
-        bool CanNavigateBackward { get; }
+        void Refresh_Click();
+        void UpdatePathUIToWorkingDirectory(string newWorkingDir, string singleItemOverride = null);
+        void NavigateToPath(string navigationPath, Type sourcePageType, NavigationArguments navArgs = null);
 
+        Type CurrentPageType { get; }
+
+        bool CanNavigateBackward { get; }
         bool CanNavigateForward { get; }
 
-        void Refresh_Click();
-
-        void UpdatePathUIToWorkingDirectory(string newWorkingDir, string singleItemOverride = null);
-
-        void NavigateToPath(string navigationPath, Type sourcePageType, NavigationArguments navArgs = null);
 
         /// <summary>
         /// Gets the layout mode for the specified path then navigates to it
@@ -56,18 +59,17 @@ namespace Files
         public bool IsColumnView { get; } 
     }
 
-    public interface IPaneHolder : IDisposable, INotifyPropertyChanged
+    public interface IPaneHolder : ITabItemContent, IDisposable, INotifyPropertyChanged
     {
+        public AppInstanceGroup Instances { get; }
+
         public IShellPage ActivePane { get; set; }
         public IFilesystemHelpers FilesystemHelpers { get; }
-        public TabItemArguments TabItemArguments { get; set; }
+        public List<AppInstanceInformation> TabItemArguments { get; }
 
         public void OpenPathInNewPane(string path);
 
         public void CloseActivePane();
-
-        public bool IsLeftPaneActive { get; }
-        public bool IsRightPaneActive { get; }
 
         public bool IsMultiPaneActive { get; } // Another pane is shown
         public bool IsMultiPaneEnabled { get; } // Multi pane is enabled
@@ -76,6 +78,5 @@ namespace Files
     public interface IMultiPaneInfo
     {
         public bool IsPageMainPane { get; } // The instance is the left (or only) pane
-        public IPaneHolder PaneHolder { get; }
     }
 }

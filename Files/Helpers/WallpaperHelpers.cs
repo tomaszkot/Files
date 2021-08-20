@@ -13,7 +13,7 @@ namespace Files.Helpers
             if (UserProfilePersonalizationSettings.IsSupported())
             {
                 // Get the path of the selected file
-                StorageFile sourceFile = await StorageItemHelpers.ToStorageItem<StorageFile>(filePath, associatedInstance);
+                StorageFile sourceFile = await StorageItemHelpers.ToStorageItem<StorageFile>(filePath, associatedInstance.AppInstanceInfo);
                 if (sourceFile == null)
                 {
                     return;

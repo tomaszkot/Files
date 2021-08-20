@@ -3,6 +3,7 @@ using Files.Dialogs;
 using Files.Enums;
 using Files.Filesystem;
 using Files.Helpers;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.ViewModels.Dialogs;
 using Files.Views;
@@ -36,9 +37,9 @@ namespace Files.Interacts
     {
         #region Singleton
 
-        private IBaseLayout SlimContentPage => associatedInstance?.SlimContentPage;
+        private IBaseLayout SlimContentPage => associatedInstance?.AppInstanceInfo.SlimContentPage;
 
-        private IFilesystemHelpers FilesystemHelpers => associatedInstance?.FilesystemHelpers;
+        private IFilesystemHelpers FilesystemHelpers => associatedInstance?.AppInstanceInfo.FilesystemHelpers;
 
         #endregion Singleton
 
@@ -52,7 +53,7 @@ namespace Files.Interacts
 
         #region Constructor
 
-        public BaseLayoutCommandImplementationModel(IShellPage associatedInstance, ItemManipulationModel itemManipulationModel)
+        public BaseLayoutCommandImplementationModel(IShellPage associatedInstance,ItemManipulationModel itemManipulationModel)
         {
             this.associatedInstance = associatedInstance;
             this.itemManipulationModel = itemManipulationModel;
@@ -93,7 +94,7 @@ namespace Files.Interacts
                         { "runasadmin", false },
                         {
                             "filepath",
-                            Path.Combine(associatedInstance.FilesystemViewModel.WorkingDirectory,
+                            Path.Combine(associatedInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory,
                                 string.Format("ShortcutCreateNewSuffix".GetLocalized(), selectedItem.ItemName) + ".lnk")
                         }
                     };
@@ -157,7 +158,7 @@ namespace Files.Interacts
 
         public virtual void UnpinDirectoryFromFavorites(RoutedEventArgs e)
         {
-            App.SidebarPinnedController.Model.RemoveItem(associatedInstance.FilesystemViewModel.WorkingDirectory);
+            App.SidebarPinnedController.Model.RemoveItem(associatedInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory);
         }
 
         public virtual async void EmptyRecycleBin(RoutedEventArgs e)
@@ -231,7 +232,7 @@ namespace Files.Interacts
 
             if (destFolder)
             {
-                associatedInstance.NavigateWithArguments(associatedInstance.InstanceViewModel.FolderSettings.GetLayoutType(folderPath), new NavigationArguments()
+                associatedInstance.NavigateWithArguments(associatedInstance.AppInstanceInfo.InstanceViewModel.FolderSettings.GetLayoutType(folderPath), new NavigationArguments()
                 {
                     NavPathParam = folderPath,
                     SelectItems = new[] { Path.GetFileName(item.TargetPath.TrimPath()) },
@@ -280,9 +281,9 @@ namespace Files.Interacts
         public virtual void OpenDirectoryInNewPane(RoutedEventArgs e)
         {
             ListedItem listedItem = SlimContentPage.SelectedItems.FirstOrDefault();
-            if (listedItem != null)
+            if (listedItem != null && associatedInstance.AppInstanceInfo.AppInstance is AppInstanceGroup group)
             {
-                associatedInstance.PaneHolder?.OpenPathInNewPane((listedItem as ShortcutItem)?.TargetPath ?? listedItem.ItemPath);
+                group.AddAppInstanceByArguments(new TabItemArguments((listedItem as ShortcutItem)?.TargetPath ?? listedItem.ItemPath));
             }
         }
 
@@ -376,14 +377,14 @@ namespace Files.Interacts
                     }
                     else if (item.PrimaryItemAttribute == StorageItemTypes.Folder)
                     {
-                        if (await StorageItemHelpers.ToStorageItem<StorageFolder>(item.ItemPath, associatedInstance) is StorageFolder folder)
+                        if (await StorageItemHelpers.ToStorageItem<StorageFolder>(item.ItemPath, associatedInstance.AppInstanceInfo) is StorageFolder folder)
                         {
                             items.Add(folder);
                         }
                     }
                     else
                     {
-                        if (await StorageItemHelpers.ToStorageItem<StorageFile>(item.ItemPath, associatedInstance) is StorageFile file)
+                        if (await StorageItemHelpers.ToStorageItem<StorageFile>(item.ItemPath, associatedInstance.AppInstanceInfo) is StorageFile file)
                         {
                             items.Add(file);
                         }
@@ -491,7 +492,7 @@ namespace Files.Interacts
 
         public virtual void GridViewSizeDecrease(KeyboardAcceleratorInvokedEventArgs e)
         {
-            if (associatedInstance.IsCurrentInstance)
+            if (associatedInstance.AppInstanceInfo.IsCurrentInstance)
             {
                 associatedInstance.InstanceViewModel.FolderSettings.GridViewSize = associatedInstance.InstanceViewModel.FolderSettings.GridViewSize - Constants.Browser.GridViewBrowser.GridViewIncrement; // Make Smaller
             }
@@ -503,7 +504,7 @@ namespace Files.Interacts
 
         public virtual void GridViewSizeIncrease(KeyboardAcceleratorInvokedEventArgs e)
         {
-            if (associatedInstance.IsCurrentInstance)
+            if (associatedInstance.AppInstanceInfo.IsCurrentInstance)
             {
                 associatedInstance.InstanceViewModel.FolderSettings.GridViewSize = associatedInstance.InstanceViewModel.FolderSettings.GridViewSize + Constants.Browser.GridViewBrowser.GridViewIncrement; // Make Larger
             }

@@ -2,6 +2,7 @@
 using Files.Dialogs;
 using Files.Filesystem;
 using Files.Helpers;
+using Files.UserControls.MultitaskingControl;
 using Files.UserControls.Widgets;
 using Files.ViewModels;
 using Files.ViewModels.Pages;
@@ -10,6 +11,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 
@@ -30,6 +32,8 @@ namespace Files.Views
             get => (YourHomeViewModel)DataContext;
             set => DataContext = value;
         }
+
+        public bool IsMultiPaneEnabled => App.AppSettings.IsMultiPaneEnabled && !(Window.Current.Bounds.Width <= 750);
 
         public WidgetsPage()
         {
@@ -111,7 +115,7 @@ namespace Files.Views
         {
             FolderWidget FolderWidget = sender as FolderWidget;
 
-            FolderWidget.ShowMultiPaneControls = AppInstance.PaneHolder?.IsMultiPaneEnabled ?? false;
+            FolderWidget.ShowMultiPaneControls = IsMultiPaneEnabled;
         }
 
         private async void RecentFilesWidget_RecentFileInvoked(object sender, UserControls.PathNavigationEventArgs e)
@@ -119,7 +123,7 @@ namespace Files.Views
             try
             {
                 var directoryName = Path.GetDirectoryName(e.ItemPath);
-                await Win32Helpers.InvokeWin32ComponentAsync(e.ItemPath, AppInstance, workingDirectory: directoryName);
+                await Win32Helpers.InvokeWin32ComponentAsync(e.ItemPath, AppInstance.AppInstanceInfo, workingDirectory: directoryName);
             }
             catch (UnauthorizedAccessException)
             {
@@ -179,7 +183,11 @@ namespace Files.Views
 
         private void FolderWidget_LibraryCardNewPaneInvoked(object sender, LibraryCardInvokedEventArgs e)
         {
-            AppInstance.PaneHolder?.OpenPathInNewPane(e.Path);
+            AppInstance.AppInstanceInfo.AppInstance.AddAppInstanceByArguments(new TabItemArguments()
+            {
+                InitialPageType = typeof(ModernShellPage),
+                NavigationArg = e.Path
+            });
         }
 
         private async void FolderWidget_LibraryCardPropertiesInvoked(object sender, LibraryCardEventArgs e)
@@ -189,7 +197,11 @@ namespace Files.Views
 
         private void DrivesWidget_DrivesWidgetNewPaneInvoked(object sender, DrivesWidget.DrivesWidgetInvokedEventArgs e)
         {
-            AppInstance.PaneHolder?.OpenPathInNewPane(e.Path);
+            AppInstance.AppInstanceInfo.AppInstance.AddAppInstanceByArguments(new TabItemArguments()
+            {
+                InitialPageType = typeof(ModernShellPage),
+                NavigationArg = e.Path
+            });
         }
 
         private void DrivesWidget_DrivesWidgetInvoked(object sender, DrivesWidget.DrivesWidgetInvokedEventArgs e)

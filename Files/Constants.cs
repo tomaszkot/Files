@@ -47,6 +47,7 @@
         {
             public const float DimItemOpacity = 0.4f;
 
+            public const int MaxPanesCount = 2;
             /// <summary>
             /// The minimum width of the sidebar in expanded state
             /// </summary>

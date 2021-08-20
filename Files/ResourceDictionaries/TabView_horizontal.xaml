@@ -4,11 +4,10 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives">
 
-    <Style BasedOn="{StaticResource VerticalTabViewStyle}" TargetType="muxc:TabView" />
+    <Style BasedOn="{StaticResource DefaultTabViewStyle}" TargetType="muxc:TabView" />
 
-    <Style x:Key="VerticalTabViewStyle" TargetType="muxc:TabView">
-        <Setter Property="VerticalAlignment" Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Style x:Key="DefaultTabViewStyle" TargetType="muxc:TabView">
+        <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="Padding" Value="{ThemeResource TabViewHeaderPadding}" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Background" Value="{ThemeResource TabViewBackground}" />
@@ -19,87 +18,62 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <!--<RowDefinition Height="*" />-->
                         </Grid.RowDefinitions>
 
-                        <Grid
-                            x:Name="TabContainerGrid"
-                            Background="{TemplateBinding Background}"
-                            XYFocusKeyboardNavigation="Enabled">
+                        <Grid x:Name="TabContainerGrid"
+                                Background="{TemplateBinding Background}"
+                                XYFocusKeyboardNavigation="Enabled">
 
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition x:Name="LeftContentColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="TabColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="AddButtonColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="RightContentColumn" Width="*" />
+                                <ColumnDefinition Width="Auto" x:Name="LeftContentColumn"/>
+                                <ColumnDefinition Width="Auto" x:Name="TabColumn"/>
+                                <ColumnDefinition Width="Auto" x:Name="AddButtonColumn"/>
+                                <ColumnDefinition Width="*" x:Name="RightContentColumn"/>
                             </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
 
-                            <Border
-                                Grid.Column="1"
-                                Grid.ColumnSpan="2"
-                                Height="1"
-                                VerticalAlignment="Bottom"
-                                BorderBrush="{ThemeResource TabViewBorderBrush}"
-                                BorderThickness="1" />
+                            <Border BorderBrush="{ThemeResource TabViewBorderBrush}" BorderThickness="1" Height="1" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Bottom"/>
 
                             <ContentPresenter
-                                x:Name="LeftContentPresenter"
                                 Grid.Column="0"
+                                x:Name="LeftContentPresenter"
                                 Content="{TemplateBinding TabStripHeader}"
-                                ContentTemplate="{TemplateBinding TabStripHeaderTemplate}" />
+                                ContentTemplate="{TemplateBinding TabStripHeaderTemplate}"/>
 
                             <primitives:TabViewListView
-                                x:Name="TabListView"
                                 Grid.Column="1"
+                                x:Name="TabListView"
                                 Padding="{TemplateBinding Padding}"
-                                AllowDrop="{TemplateBinding AllowDropTabs}"
-                                CanDragItems="{TemplateBinding CanDragTabs}"
                                 CanReorderItems="{TemplateBinding CanReorderTabs}"
+                                CanDragItems="{TemplateBinding CanDragTabs}"
+                                AllowDrop="{TemplateBinding AllowDropTabs}"
+                                ItemsSource="{TemplateBinding TabItemsSource}"
                                 ItemTemplate="{TemplateBinding TabItemTemplate}"
-                                ItemTemplateSelector="{TemplateBinding TabItemTemplateSelector}"
-                                ItemsSource="{TemplateBinding TabItemsSource}" />
+                                ItemTemplateSelector="{TemplateBinding TabItemTemplateSelector}"/>
 
                             <Border
-                                Grid.Row="1"
-                                Grid.ColumnSpan="4"
-                                Padding="0,4"
-                                VerticalAlignment="Bottom"
-                                Visibility="{Binding IsAddTabButtonVisible, RelativeSource={RelativeSource TemplatedParent}}">
+                                 Visibility="{Binding IsAddTabButtonVisible, RelativeSource={RelativeSource TemplatedParent}}"
+                                 Grid.Column="2"
+                                 Padding="{ThemeResource TabViewItemAddButtonContainerPadding}"
+                                 VerticalAlignment="Bottom">
                                 <Button
                                     x:Name="AddButton"
-                                    Height="36"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Content="&#xE710;"
+                                    IsTextScaleFactorEnabled="False"
                                     Command="{TemplateBinding AddTabButtonCommand}"
                                     CommandParameter="{TemplateBinding AddTabButtonCommandParameter}"
-                                    HighContrastAdjustment="None"
-                                    IsTextScaleFactorEnabled="False"
-                                    Style="{ThemeResource TabViewButtonStyle}">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon
-                                                FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                FontSize="12"
-                                                Glyph="&#xE710;" />
-                                            <TextBlock 
-                                                VerticalAlignment="Center" 
-                                                x:Uid="TabViewVerticalNewTab"
-                                                Text="New tab" />
-                                        </StackPanel>
-                                    </Button.Content>
-                                </Button>
+                                    Style="{ThemeResource TabViewButtonStyle}"
+                                    HighContrastAdjustment="None"/>
                             </Border>
 
                             <ContentPresenter
-                                x:Name="RightContentPresenter"
                                 Grid.Column="3"
+                                x:Name="RightContentPresenter"
                                 HorizontalAlignment="Stretch"
                                 Content="{TemplateBinding TabStripFooter}"
-                                ContentTemplate="{TemplateBinding TabStripFooterTemplate}" />
+                                ContentTemplate="{TemplateBinding TabStripFooterTemplate}"/>
 
                         </Grid>
 

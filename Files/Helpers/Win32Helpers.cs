@@ -1,4 +1,5 @@
 ﻿using Files.Extensions;
+using Files.UserControls.MultitaskingControl;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,12 +11,12 @@ namespace Files.Helpers
 {
     public static class Win32Helpers
     {
-        public static async Task InvokeWin32ComponentAsync(string applicationPath, IShellPage associatedInstance, string arguments = null, bool runAsAdmin = false, string workingDirectory = null)
+        public static async Task InvokeWin32ComponentAsync(string applicationPath, AppInstanceInformation associatedInstance, string arguments = null, bool runAsAdmin = false, string workingDirectory = null)
         {
             await InvokeWin32ComponentsAsync(applicationPath.CreateEnumerable(), associatedInstance, arguments, runAsAdmin, workingDirectory);
         }
 
-        public static async Task InvokeWin32ComponentsAsync(IEnumerable<string> applicationPaths, IShellPage associatedInstance, string arguments = null, bool runAsAdmin = false, string workingDirectory = null)
+        public static async Task InvokeWin32ComponentsAsync(IEnumerable<string> applicationPaths, AppInstanceInformation associatedInstance, string arguments = null, bool runAsAdmin = false, string workingDirectory = null)
         {
             Debug.WriteLine("Launching EXE in FullTrustProcess");
 

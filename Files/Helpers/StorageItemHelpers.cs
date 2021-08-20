@@ -1,5 +1,6 @@
 using Files.Enums;
 using Files.Filesystem;
+using Files.UserControls.MultitaskingControl;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -13,12 +14,12 @@ namespace Files.Helpers
     /// </summary>
     public static class StorageItemHelpers
     {
-        public static async Task<IStorageItem> ToStorageItem(this IStorageItemWithPath item, IShellPage associatedInstance = null)
+        public static async Task<IStorageItem> ToStorageItem(this IStorageItemWithPath item, AppInstanceInformation associatedInstance = null)
         {
             return (await item.ToStorageItemResult(associatedInstance)).Result;
         }
 
-        public static async Task<TOut> ToStorageItem<TOut>(string path, IShellPage associatedInstance = null) where TOut : IStorageItem
+        public static async Task<TOut> ToStorageItem<TOut>(string path, AppInstanceInformation associatedInstance = null) where TOut : IStorageItem
         {
             FilesystemResult<StorageFile> file = null;
             FilesystemResult<StorageFolder> folder = null;
@@ -108,7 +109,7 @@ namespace Files.Helpers
             return (long)properties.Size;
         }
 
-        public static async Task<FilesystemResult<IStorageItem>> ToStorageItemResult(this IStorageItemWithPath item, IShellPage associatedInstance = null)
+        public static async Task<FilesystemResult<IStorageItem>> ToStorageItemResult(this IStorageItemWithPath item, AppInstanceInformation associatedInstance = null)
         {
             var returnedItem = new FilesystemResult<IStorageItem>(null, FileSystemStatusCode.Generic);
             if (!string.IsNullOrEmpty(item.Path))
@@ -135,7 +136,7 @@ namespace Files.Helpers
                     (IStorageItemWithPath)new StorageFolderWithPath(null, customPath);
         }
 
-        public static async Task<FilesystemItemType> GetTypeFromPath(string path, IShellPage associatedInstance = null)
+        public static async Task<FilesystemItemType> GetTypeFromPath(string path, AppInstanceInformation associatedInstance = null)
         {
             IStorageItem item = await ToStorageItem<IStorageItem>(path, associatedInstance);
 

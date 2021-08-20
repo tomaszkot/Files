@@ -7,6 +7,7 @@ using Files.Helpers;
 using Files.Helpers.ContextFlyouts;
 using Files.Interacts;
 using Files.UserControls;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.ViewModels.Previews;
 using Files.Views;
@@ -49,9 +50,9 @@ namespace Files
 
         public SettingsViewModel AppSettings => App.AppSettings;
 
-        public FolderSettingsViewModel FolderSettings => ParentShellPageInstance.InstanceViewModel.FolderSettings;
+        public FolderSettingsViewModel FolderSettings => ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.FolderSettings;
 
-        public CurrentInstanceViewModel InstanceViewModel => ParentShellPageInstance.InstanceViewModel;
+        public CurrentInstanceViewModel InstanceViewModel => ParentShellPageInstance.AppInstanceInfo.InstanceViewModel;
 
         public MainViewModel MainViewModel => App.MainViewModel;
         public DirectoryPropertiesViewModel DirectoryPropertiesViewModel { get; }
@@ -149,7 +150,7 @@ namespace Files
                     ListedItem previouslySelectedItem = null;
 
                     // Use FilesAndFolders because only displayed entries should be jumped to
-                    IEnumerable<ListedItem> candidateItems = ParentShellPageInstance.FilesystemViewModel.FilesAndFolders.Where(f => f.ItemName.Length >= value.Length && f.ItemName.Substring(0, value.Length).ToLower() == value);
+                    IEnumerable<ListedItem> candidateItems = ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.FilesAndFolders.Where(f => f.ItemName.Length >= value.Length && f.ItemName.Substring(0, value.Length).ToLower() == value);
 
                     if (IsItemSelected)
                     {
@@ -266,7 +267,7 @@ namespace Files
                     //ItemManipulationModel.SetDragModeForItems();
                 }
 
-                ParentShellPageInstance.NavToolbarViewModel.SelectedItems = value;
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.SelectedItems = value;
             }
         }
 
@@ -361,9 +362,9 @@ namespace Files
 
         private void FolderSettings_LayoutModeChangeRequested(object sender, LayoutModeEventArgs e)
         {
-            if (ParentShellPageInstance.SlimContentPage != null)
+            if (ParentShellPageInstance.AppInstanceInfo.SlimContentPage != null)
             {
-                var layoutType = FolderSettings.GetLayoutType(ParentShellPageInstance.FilesystemViewModel.WorkingDirectory, false);
+                var layoutType = FolderSettings.GetLayoutType(ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory, false);
 
                 if (layoutType != ParentShellPageInstance.CurrentPageType)
                 {
@@ -403,59 +404,59 @@ namespace Files
             IsItemSelected = false;
             FolderSettings.LayoutModeChangeRequested += FolderSettings_LayoutModeChangeRequested;
             FolderSettings.GroupOptionPreferenceUpdated += FolderSettings_GroupOptionPreferenceUpdated;
-            ParentShellPageInstance.FilesystemViewModel.IsFolderEmptyTextDisplayed = false;
+            ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.IsFolderEmptyTextDisplayed = false;
             FolderSettings.SetLayoutInformation();
 
             if (!navigationArguments.IsSearchResultPage)
             {
-                ParentShellPageInstance.NavToolbarViewModel.CanRefresh = true;
-                string previousDir = ParentShellPageInstance.FilesystemViewModel.WorkingDirectory;
-                await ParentShellPageInstance.FilesystemViewModel.SetWorkingDirectoryAsync(navigationArguments.NavPathParam);
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanRefresh = true;
+                string previousDir = ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory;
+                await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.SetWorkingDirectoryAsync(navigationArguments.NavPathParam);
 
                 // pathRoot will be empty on recycle bin path
-                var workingDir = ParentShellPageInstance.FilesystemViewModel.WorkingDirectory;
+                var workingDir = ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory;
                 string pathRoot = GetPathRoot(workingDir);
                 if (string.IsNullOrEmpty(pathRoot) || workingDir.StartsWith(AppSettings.RecycleBinPath)) // Can't go up from recycle bin
                 {
-                    ParentShellPageInstance.NavToolbarViewModel.CanNavigateToParent = false;
+                    ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanNavigateToParent = false;
                 }
                 else
                 {
-                    ParentShellPageInstance.NavToolbarViewModel.CanNavigateToParent = true;
+                    ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanNavigateToParent = true;
                 }
 
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeRecycleBin = workingDir.StartsWith(App.AppSettings.RecycleBinPath);
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeMtpDevice = workingDir.StartsWith("\\\\?\\");
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeSearchResults = false;
-                ParentShellPageInstance.NavToolbarViewModel.PathControlDisplayText = navigationArguments.NavPathParam;
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeRecycleBin = workingDir.StartsWith(App.AppSettings.RecycleBinPath);
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeMtpDevice = workingDir.StartsWith("\\\\?\\");
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeSearchResults = false;
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.PathControlDisplayText = navigationArguments.NavPathParam;
                 if (!navigationArguments.IsLayoutSwitch)
                 {
-                    ParentShellPageInstance.FilesystemViewModel.RefreshItems(previousDir, SetSelectedItemsOnNavigation);
+                    ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.RefreshItems(previousDir, SetSelectedItemsOnNavigation);
                 }
                 else
                 {
-                    ParentShellPageInstance.NavToolbarViewModel.CanGoForward = false;
+                    ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanGoForward = false;
                 }
             }
             else
             {
-                ParentShellPageInstance.NavToolbarViewModel.CanRefresh = false;
-                ParentShellPageInstance.NavToolbarViewModel.CanGoForward = false;
-                ParentShellPageInstance.NavToolbarViewModel.CanGoBack = true;  // Impose no artificial restrictions on back navigation. Even in a search results page.
-                ParentShellPageInstance.NavToolbarViewModel.CanNavigateToParent = false;
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeRecycleBin = false;
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeMtpDevice = false;
-                ParentShellPageInstance.InstanceViewModel.IsPageTypeSearchResults = true;
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanRefresh = false;
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanGoForward = false;
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanGoBack = true;  // Impose no artificial restrictions on back navigation. Even in a search results page.
+                ParentShellPageInstance.AppInstanceInfo.NavToolbarViewModel.CanNavigateToParent = false;
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeRecycleBin = false;
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeMtpDevice = false;
+                ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeSearchResults = true;
                 if (!navigationArguments.IsLayoutSwitch)
                 {
-                    await ParentShellPageInstance.FilesystemViewModel.AddSearchResultsToCollection(navigationArguments.SearchResults, navigationArguments.SearchPathParam);
+                    await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.AddSearchResultsToCollection(navigationArguments.SearchResults, navigationArguments.SearchPathParam);
                     var displayName = App.LibraryManager.TryGetLibrary(navigationArguments.SearchPathParam, out var lib) ? lib.Text : navigationArguments.SearchPathParam;
                     ParentShellPageInstance.UpdatePathUIToWorkingDirectory(null, $"{"SearchPagePathBoxOverrideText".GetLocalized()} {displayName}");
                 }
             }
 
-            ParentShellPageInstance.InstanceViewModel.IsPageTypeNotHome = true; // show controls that were hidden on the home page
-            ParentShellPageInstance.FilesystemViewModel.UpdateGroupOptions();
+            ParentShellPageInstance.AppInstanceInfo.InstanceViewModel.IsPageTypeNotHome = true; // show controls that were hidden on the home page
+            ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.UpdateGroupOptions();
             UpdateCollectionViewSource();
             FolderSettings.IsLayoutModeChanging = false;
 
@@ -476,7 +477,7 @@ namespace Files
                     List<ListedItem> liItemsToSelect = new List<ListedItem>();
                     foreach (string item in navigationArguments.SelectItems)
                     {
-                        liItemsToSelect.Add(ParentShellPageInstance.FilesystemViewModel.FilesAndFolders.Where((li) => li.ItemName == item).First());
+                        liItemsToSelect.Add(ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.FilesAndFolders.Where((li) => li.ItemName == item).First());
                     }
 
                     ItemManipulationModel.SetSelectedItems(liItemsToSelect);
@@ -496,9 +497,9 @@ namespace Files
             groupingCancellationToken?.Cancel();
             groupingCancellationToken = new CancellationTokenSource();
             var token = groupingCancellationToken.Token;
-            await ParentShellPageInstance.FilesystemViewModel.GroupOptionsUpdated(token);
+            await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.GroupOptionsUpdated(token);
             UpdateCollectionViewSource();
-            await ParentShellPageInstance.FilesystemViewModel.ReloadItemGroupHeaderImagesAsync();
+            await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.ReloadItemGroupHeaderImagesAsync();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -514,7 +515,7 @@ namespace Files
             var parameter = e.Parameter as NavigationArguments;
             if (!parameter.IsLayoutSwitch)
             {
-                ParentShellPageInstance.FilesystemViewModel.CancelLoadAndClearFiles();
+                ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.CancelLoadAndClearFiles();
             }
         }
 
@@ -567,7 +568,7 @@ namespace Files
 
                 if (!InstanceViewModel.IsPageTypeSearchResults)
                 {
-                    var shellMenuItems = await ContextFlyoutItemHelper.GetBaseContextShellCommandsAsync(connection: await Connection, currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.FilesystemViewModel.WorkingDirectory, shiftPressed: shiftPressed, showOpenMenu: false);
+                    var shellMenuItems = await ContextFlyoutItemHelper.GetBaseContextShellCommandsAsync(connection: await Connection, currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory, shiftPressed: shiftPressed, showOpenMenu: false);
                     if (shellContextMenuItemCancellationToken.IsCancellationRequested)
                     {
                         return;
@@ -592,7 +593,7 @@ namespace Files
             shellContextMenuItemCancellationToken = new CancellationTokenSource();
             SelectedItemsPropertiesViewModel.CheckFileExtension(SelectedItem?.FileExtension);
             var shiftPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-            var items = ContextFlyoutItemHelper.GetItemContextCommandsWithoutShellItems(currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.FilesystemViewModel.WorkingDirectory, selectedItems: SelectedItems, selectedItemsPropertiesViewModel: SelectedItemsPropertiesViewModel, commandsViewModel: CommandsViewModel, shiftPressed: shiftPressed, showOpenMenu: false);
+            var items = ContextFlyoutItemHelper.GetItemContextCommandsWithoutShellItems(currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory, selectedItems: SelectedItems, selectedItemsPropertiesViewModel: SelectedItemsPropertiesViewModel, commandsViewModel: CommandsViewModel, shiftPressed: shiftPressed, showOpenMenu: false);
             ItemContextMenuFlyout.PrimaryCommands.Clear();
             ItemContextMenuFlyout.SecondaryCommands.Clear();
             var (primaryElements, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(items);
@@ -609,7 +610,7 @@ namespace Files
                 AddFileTagsItemToMenu(ItemContextMenuFlyout);
             }
 
-            var shellMenuItems = await ContextFlyoutItemHelper.GetItemContextShellCommandsAsync(connection: await Connection, currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.FilesystemViewModel.WorkingDirectory, selectedItems: SelectedItems, shiftPressed: shiftPressed, showOpenMenu: false);
+            var shellMenuItems = await ContextFlyoutItemHelper.GetItemContextShellCommandsAsync(connection: await Connection, currentInstanceViewModel: InstanceViewModel, workingDir: ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory, selectedItems: SelectedItems, shiftPressed: shiftPressed, showOpenMenu: false);
             if (shellContextMenuItemCancellationToken.IsCancellationRequested)
             {
                 return;
@@ -734,7 +735,7 @@ namespace Files
 
         protected virtual void Page_CharacterReceived(CoreWindow sender, CharacterReceivedEventArgs args)
         {
-            if (ParentShellPageInstance.IsCurrentInstance)
+            if (ParentShellPageInstance.AppInstanceInfo.IsCurrentInstance)
             {
                 char letter = Convert.ToChar(args.KeyCode);
                 JumpString += letter.ToString().ToLowerInvariant();
@@ -757,12 +758,12 @@ namespace Files
                 SelectedItems.Add(item);
                 if (item.PrimaryItemAttribute == StorageItemTypes.File)
                 {
-                    await ParentShellPageInstance.FilesystemViewModel.GetFileFromPathAsync(item.ItemPath)
+                    await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.GetFileFromPathAsync(item.ItemPath)
                         .OnSuccess(t => selectedStorageItems.Add(t));
                 }
                 else if (item.PrimaryItemAttribute == StorageItemTypes.Folder)
                 {
-                    await ParentShellPageInstance.FilesystemViewModel.GetFolderFromPathAsync(item.ItemPath)
+                    await ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.GetFolderFromPathAsync(item.ItemPath)
                         .OnSuccess(t => selectedStorageItems.Add(t));
                 }
             }
@@ -955,12 +956,12 @@ namespace Files
 
         public void UpdateCollectionViewSource()
         {
-            if (ParentShellPageInstance.FilesystemViewModel.FilesAndFolders.IsGrouped)
+            if (ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.FilesAndFolders.IsGrouped)
             {
                 CollectionViewSource = new CollectionViewSource()
                 {
                     IsSourceGrouped = true,
-                    Source = ParentShellPageInstance.FilesystemViewModel.FilesAndFolders.GroupedCollection
+                    Source = ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.FilesAndFolders.GroupedCollection
                 };
             }
             else
@@ -968,7 +969,7 @@ namespace Files
                 CollectionViewSource = new CollectionViewSource()
                 {
                     IsSourceGrouped = false,
-                    Source = ParentShellPageInstance.FilesystemViewModel.FilesAndFolders
+                    Source = ParentShellPageInstance.AppInstanceInfo.FilesystemViewModel.FilesAndFolders
                 };
             }
         }

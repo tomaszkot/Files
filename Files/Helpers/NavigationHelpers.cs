@@ -1,6 +1,7 @@
 ﻿using Files.Common;
 using Files.Enums;
 using Files.Filesystem;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.Views;
 using Microsoft.Toolkit.Uwp;
@@ -64,16 +65,12 @@ namespace Files.Helpers
 
         public static async void OpenSelectedItems(IShellPage associatedInstance, bool openViaApplicationPicker = false)
         {
-            if (associatedInstance.FilesystemViewModel.WorkingDirectory.StartsWith(App.AppSettings.RecycleBinPath))
+            if (associatedInstance.AppInstanceInfo.FilesystemViewModel.WorkingDirectory.StartsWith(App.AppSettings.RecycleBinPath))
             {
                 // Do not open files and folders inside the recycle bin
                 return;
             }
-            if (associatedInstance.SlimContentPage == null)
-            {
-                return;
-            }
-            foreach (ListedItem item in associatedInstance.SlimContentPage.SelectedItems)
+            foreach (ListedItem item in associatedInstance.AppInstanceInfo.SlimContentPage.SelectedItems)
             {
                 var type = item.PrimaryItemAttribute == StorageItemTypes.Folder ?
                     FilesystemItemType.Directory : FilesystemItemType.File;
@@ -90,10 +87,6 @@ namespace Files.Helpers
             if (associatedInstance.FilesystemViewModel.WorkingDirectory.StartsWith(App.AppSettings.RecycleBinPath))
             {
                 // Do not open files and folders inside the recycle bin
-                return;
-            }
-            if (associatedInstance.SlimContentPage == null)
-            {
                 return;
             }
             foreach (var item in items)
@@ -211,7 +204,7 @@ namespace Files.Helpers
                 {
                     if (string.IsNullOrEmpty(shortcutTargetPath))
                     {
-                        await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance);
+                        await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance.AppInstanceInfo);
                         return true;
                     }
                     else
@@ -272,7 +265,7 @@ namespace Files.Helpers
                 {
                     if (string.IsNullOrEmpty(shortcutTargetPath))
                     {
-                        await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance, args);
+                        await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance.AppInstanceInfo, args);
                     }
                     else
                     {
@@ -285,13 +278,13 @@ namespace Files.Helpers
                                 mostRecentlyUsed.Add(childFile.File, childFile.Path);
                             }
                         }
-                        await Win32Helpers.InvokeWin32ComponentAsync(shortcutTargetPath, associatedInstance, $"{args} {shortcutArguments}", shortcutRunAsAdmin, shortcutWorkingDirectory);
+                        await Win32Helpers.InvokeWin32ComponentAsync(shortcutTargetPath, associatedInstance.AppInstanceInfo, $"{args} {shortcutArguments}", shortcutRunAsAdmin, shortcutWorkingDirectory);
                     }
                     opened = (FilesystemResult)true;
                 }
                 else if (isHiddenItem)
                 {
-                    await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance, args);
+                    await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance.AppInstanceInfo, args);
                 }
                 else
                 {
@@ -400,7 +393,7 @@ namespace Files.Helpers
 
                                 if (!launchSuccess)
                                 {
-                                    await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance, args);
+                                    await Win32Helpers.InvokeWin32ComponentAsync(path, associatedInstance.AppInstanceInfo, args);
                                 }
                             }
                         });

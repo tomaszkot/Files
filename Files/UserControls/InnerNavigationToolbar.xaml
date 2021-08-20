@@ -9,7 +9,7 @@
     xmlns:local1="using:Files"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vc="using:Files.Converters"
-    xmlns:xh="using:Files.Helpers.XamlHelpers"
+    xmlns:xh="using:Files.Helpers.XamlHelpers" xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
     d:DesignHeight="40"
     d:DesignWidth="400"
     mc:Ignorable="d">
@@ -427,7 +427,7 @@
                     <FontIcon FontSize="10" Glyph="&#xE152;" />
                 </AppBarButton.Icon>
                 <AppBarButton.Flyout>
-                    <Flyout Placement="Bottom" ShouldConstrainToRootBounds="False">
+                    <Flyout Placement="Bottom" Windows10version1903:ShouldConstrainToRootBounds="False">
                         <StackPanel Spacing="12">
                             <TextBlock
                                 x:Uid="NavToolbarLayout"

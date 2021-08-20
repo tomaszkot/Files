@@ -4,6 +4,7 @@ using Files.Extensions;
 using Files.Filesystem.FilesystemHistory;
 using Files.Helpers;
 using Files.Interacts;
+using Files.UserControls.MultitaskingControl;
 using Microsoft.Toolkit.Uwp;
 using Newtonsoft.Json;
 using System;
@@ -31,9 +32,9 @@ namespace Files.Filesystem
     {
         #region Private Members
 
-        private IShellPage associatedInstance;
+        private AppInstanceInformation associatedInstance;
 
-        private ItemManipulationModel itemManipulationModel => associatedInstance.SlimContentPage?.ItemManipulationModel;
+        private ItemManipulationModel itemManipulationModel => associatedInstance.SlimContentPage.ItemManipulationModel;
 
         private RecycleBinHelpers recycleBinHelpers;
 
@@ -41,7 +42,7 @@ namespace Files.Filesystem
 
         #region Constructor
 
-        public FilesystemOperations(IShellPage associatedInstance)
+        public FilesystemOperations(AppInstanceInformation associatedInstance)
         {
             this.associatedInstance = associatedInstance;
             recycleBinHelpers = new RecycleBinHelpers();

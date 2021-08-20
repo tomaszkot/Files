@@ -10,10 +10,10 @@ namespace Files.Helpers
 {
     public static class MultitaskingTabsHelpers
     {
-        public static void CloseTabsToTheRight(TabItem clickedTab, IMultitaskingControl multitaskingControl)
+        public static void CloseTabsToTheRight(IAppInstance clickedTab, IMultitaskingControl multitaskingControl)
         {
             int index = MainPageViewModel.AppInstances.IndexOf(clickedTab);
-            List<TabItem> tabsToClose = new List<TabItem>();
+            List<IAppInstance> tabsToClose = new List<IAppInstance>();
 
             for (int i = index + 1; i < MainPageViewModel.AppInstances.Count; i++)
             {
@@ -26,42 +26,22 @@ namespace Files.Helpers
             }
         }
 
-        public static async Task MoveTabToNewWindow(TabItem tab, IMultitaskingControl multitaskingControl)
+        public static async Task MoveTabToNewWindow(IAppInstance tab, IMultitaskingControl multitaskingControl)
         {
-            int index = MainPageViewModel.AppInstances.IndexOf(tab);
-            TabItemArguments tabItemArguments = MainPageViewModel.AppInstances[index].TabItemArguments;
+            // TODO: Serialize AppInstances
+            //int index = MainPageViewModel.AppInstances.IndexOf(tab);
+            //TabItemArguments tabItemArguments = MainPageViewModel.AppInstances[index].TabItemArguments;
 
-            multitaskingControl?.CloseTab(MainPageViewModel.AppInstances[index]);
+            //multitaskingControl?.CloseTab(MainPageViewModel.AppInstances[index]);
 
-            if (tabItemArguments != null)
-            {
-                await NavigationHelpers.OpenTabInNewWindowAsync(tabItemArguments.Serialize());
-            }
-            else
-            {
-                await NavigationHelpers.OpenPathInNewWindowAsync("NewTab".GetLocalized());
-            }
-        }
-
-        public static async Task AddNewTab(Type type, object tabViewItemArgs, int atIndex = -1)
-        {
-            FontIconSource fontIconSource = new FontIconSource();
-            fontIconSource.FontFamily = App.MainViewModel.FontName;
-
-            TabItem tabItem = new TabItem()
-            {
-                Header = null,
-                IconSource = fontIconSource,
-                Description = null
-            };
-            tabItem.Control.NavigationArguments = new TabItemArguments()
-            {
-                InitialPageType = type,
-                NavigationArg = tabViewItemArgs
-            };
-            tabItem.Control.ContentChanged += MainPageViewModel.Control_ContentChanged;
-            await MainPageViewModel.UpdateTabInfo(tabItem, tabViewItemArgs);
-            MainPageViewModel.AppInstances.Insert(atIndex == -1 ? MainPageViewModel.AppInstances.Count : atIndex, tabItem);
+            //if (tabItemArguments != null)
+            //{
+            //    await NavigationHelpers.OpenTabInNewWindowAsync(tabItemArguments.Serialize());
+            //}
+            //else
+            //{
+            //    await NavigationHelpers.OpenPathInNewWindowAsync("NewTab".GetLocalized());
+            //}
         }
     }
 }

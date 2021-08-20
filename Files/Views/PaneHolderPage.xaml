@@ -13,7 +13,9 @@
     xmlns:local1="using:Files"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mconv="using:Microsoft.Toolkit.Uwp.UI.Converters"
-    xmlns:multitaskingcontrol="using:Files.UserControls.MultitaskingControl"
+    xmlns:multitaskingcontrol="using:Files.UserControls.MultitaskingControl" 
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    x:Name="holderPanePage"
     Background="{ThemeResource PaneHolderPageBackgroundBrush}"
     mc:Ignorable="d">
 
@@ -95,37 +97,34 @@
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             Background="{ThemeResource PaneHolderPageBackgroundBrush}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition
-                    x:Name="LeftColumn"
-                    Width="1.5*"
-                    MinWidth="300" />
-                <ColumnDefinition
-                    x:Name="RightColumn"
-                    Width="0"
-                    MinWidth="0" />
-            </Grid.ColumnDefinitions>
+            
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <muxc:ItemsRepeater x:Name="PanesControl" ItemsSource="{x:Bind Instances.AppInstanceInfos, Mode=OneWay}">
+                <muxc:ItemsRepeater.Layout>
+                    <muxc:UniformGridLayout MinItemWidth="200"
+                                MinColumnSpacing="4"
+                                ItemsJustification="SpaceAround"/>
+                </muxc:ItemsRepeater.Layout>
+                <muxc:ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="multitaskingcontrol:AppInstanceInformation">
+                        <local:ModernShellPage 
+                            ContentChanged="Pane_ContentChanged"
+                            CurrentInstanceBorderThickness="0,0,0,2"
+                            IsPageMainPane="{x:Bind IsCurrentInstance, Mode=OneWay}" 
+                            PointerPressed="Pane_PointerPressed" 
+                            AppInstanceInfo="{x:Bind}"
+                            TabItemArguments="{x:Bind TabItemArguments, Mode=OneWay}"/>
+                    </DataTemplate>
+                </muxc:ItemsRepeater.ItemTemplate>
+            </muxc:ItemsRepeater>
 
-            <Border x:Name="PaneLeftLoader" Grid.Row="1">
-                <local:ModernShellPage
-                    x:Name="PaneLeft"
-                    ContentChanged="Pane_ContentChanged"
-                    CurrentInstanceBorderThickness="0,0,2,0"
-                    IsPageMainPane="True"
-                    NavParams="{x:Bind NavParamsLeft, Mode=OneWay}"
-                    PaneHolder="{x:Bind}"
-                    PointerPressed="PaneLeft_PointerPressed" />
-            </Border>
-
-            <Border
+            <!--<Border
                 x:Name="PaneRightLoader"
                 Grid.Row="1"
                 Grid.Column="1"
-                x:Load="{x:Bind IsRightPaneVisible, Mode=OneWay}"
                 BorderBrush="{ThemeResource PaneBorderBrush}"
                 BorderThickness="2,0,0,0">
 
@@ -240,7 +239,7 @@
                         TargetObject="{Binding ElementName=LeftColumn}"
                         Value="1.5*" />
                 </Core:DataTriggerBehavior>
-            </Interactivity:Interaction.Behaviors>
+            </Interactivity:Interaction.Behaviors>-->
         </Grid>
     </Grid>
     <Page.KeyboardAccelerators>

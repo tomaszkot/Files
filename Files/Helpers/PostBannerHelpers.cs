@@ -1,4 +1,5 @@
 ﻿using Files.Enums;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Microsoft.Toolkit.Uwp;
 using System.Diagnostics;
@@ -9,7 +10,7 @@ namespace Files.Helpers
     {
         private static StatusCenterViewModel statusCenterViewModel => statusCenterViewModel;
 
-        public static void PostBanner_Delete(ReturnResult status, FileOperationType operation, Stopwatch sw, IShellPage associatedInstance)
+        public static void PostBanner_Delete(ReturnResult status, FileOperationType operation, Stopwatch sw, AppInstanceInformation associatedInstance)
         {
             if (status == ReturnResult.Failed ||
                 status == ReturnResult.UnknownException ||

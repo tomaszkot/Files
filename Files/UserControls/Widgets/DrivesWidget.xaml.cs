@@ -1,6 +1,7 @@
 ﻿using Files.DataModels.NavigationControlItems;
 using Files.Filesystem;
 using Files.Helpers;
+using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.ViewModels.Widgets;
 using Microsoft.Toolkit.Uwp;
@@ -139,7 +140,7 @@ namespace Files.UserControls.Widgets
 
         public bool ShowMultiPaneControls
         {
-            get => AppInstance.PaneHolder?.IsMultiPaneEnabled ?? false;
+            get => AppInstance.AppInstanceInfo.AppInstance is AppInstanceGroup;
         }
 
         private async void OpenInNewPane_Click(object sender, RoutedEventArgs e)
