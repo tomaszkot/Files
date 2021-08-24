@@ -17,31 +17,18 @@ namespace Files.UserControls.MultitaskingControl
     {
         private static bool isRestoringClosedTab = false; // Avoid reopening two tabs
 
-        protected ITabItemContent CurrentSelectedAppInstance;
-
         public const string TabDropHandledIdentifier = "FilesTabViewItemDropHandled";
 
         public const string TabPathIdentifier = "FilesTabViewItemPath";
 
-        public event EventHandler<CurrentInstanceChangedEventArgs> TabSelectionChanged;
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        public virtual DependencyObject ContainerFromItem(IAppInstance item)
-        {
-            return null;
-        }
-
-        public void SelectionChanged() => TabStrip_SelectionChanged(null, null);
 
         public BaseMultitaskingControl()
         {
-            Loaded += MultitaskingControl_Loaded;
         }
 
         public ObservableCollection<IAppInstance> Items => MainPageViewModel.AppInstances;
 
-        // RecentlyClosedTabs is shared between all multitasking controls
         public static List<IAppInstance> RecentlyClosedTabs { get; private set; } = new List<IAppInstance>();
 
         private void MultitaskingControl_TabSelectionChanged(object sender, CurrentInstanceChangedEventArgs e)
@@ -71,27 +58,6 @@ namespace Files.UserControls.MultitaskingControl
             }
         }
 
-        protected void TabStrip_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (App.MainViewModel.TabStripSelectedIndex >= 0 && App.MainViewModel.TabStripSelectedIndex < Items.Count)
-            {
-                CurrentSelectedAppInstance = GetCurrentSelectedTabInstance();
-
-                if (CurrentSelectedAppInstance != null)
-                {
-                    TabSelectionChanged?.Invoke(this, new CurrentInstanceChangedEventArgs()
-                    {
-                        CurrentInstance = CurrentSelectedAppInstance,
-                    });
-                }
-            }
-        }
-
-        protected void OnCurrentInstanceChanged(CurrentInstanceChangedEventArgs args)
-        {
-            TabSelectionChanged?.Invoke(this, args);
-        }
-
         protected void TabStrip_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
         {
             CloseTab(args.Item as IAppInstance);
@@ -100,11 +66,6 @@ namespace Files.UserControls.MultitaskingControl
         protected async void TabView_AddTabButtonClick(TabView sender, object args)
         {
             await MainPageViewModel.AddNewTabAsync();
-        }
-
-        public void MultitaskingControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            TabSelectionChanged += MultitaskingControl_TabSelectionChanged;
         }
 
         public ITabItemContent GetCurrentSelectedTabInstance()

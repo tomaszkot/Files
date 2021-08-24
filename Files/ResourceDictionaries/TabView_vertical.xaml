@@ -4,8 +4,6 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives">
 
-    <Style BasedOn="{StaticResource VerticalTabViewStyle}" TargetType="muxc:TabView" />
-
     <Style x:Key="VerticalTabViewStyle" TargetType="muxc:TabView">
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />

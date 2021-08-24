@@ -91,12 +91,16 @@ namespace Files.UserControls.MultitaskingControl
             AllowStorageItemDrop = true;
             if (AppInstanceInfos.Count == 2)
             {
-                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(AppInstanceInfos[0].TabItemArguments.NavigationArg)) + " | " + (await MainPageViewModel.GetSelectedTabInfoAsync(AppInstanceInfos[1].TabItemArguments.NavigationArg));
+                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(AppInstanceInfos[0].TabItemArguments.NavigationArg)).tabLocationHeader + " | " + (await MainPageViewModel.GetSelectedTabInfoAsync(AppInstanceInfos[1].TabItemArguments.NavigationArg)).tabLocationHeader;
             }
             else if (AppInstanceInfos.Count > 2)
             {
                 // TODO: Localize this
                 this.Header = AppInstanceInfos.Count + " Locations";
+            }
+            else
+            {
+                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(AppInstanceInfos[0].TabItemArguments.NavigationArg)).tabLocationHeader;
             }
 
             this.IconSource = new FontIconSource()
@@ -115,12 +119,16 @@ namespace Files.UserControls.MultitaskingControl
             AllowStorageItemDrop = true;
             if (args.Count == 2)
             {
-                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(args[0].NavigationArg)) + " | " + (await MainPageViewModel.GetSelectedTabInfoAsync(args[1].NavigationArg));
+                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(args[0].NavigationArg)).tabLocationHeader + " | " + (await MainPageViewModel.GetSelectedTabInfoAsync(args[1].NavigationArg)).tabLocationHeader;
             }
             else if (args.Count > 2)
             {
                 // TODO: Localize this
                 this.Header = args.Count + " Locations";
+            }
+            else
+            {
+                this.Header = (await MainPageViewModel.GetSelectedTabInfoAsync(args[0].NavigationArg)).tabLocationHeader;
             }
 
             this.IconSource = new FontIconSource()

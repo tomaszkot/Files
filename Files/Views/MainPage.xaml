@@ -426,7 +426,7 @@
                 SetCompactOverlayCommand="{x:Bind SetCompactOverlayCommand}"
                 ShowPreviewPaneButton="{x:Bind IsPreviewPaneDisabled, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
 
-            <ContentControl
+            <ContentPresenter
                 Grid.Row="1"
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"

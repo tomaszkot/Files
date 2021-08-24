@@ -19,6 +19,7 @@ namespace Files.UserControls.MultitaskingControl
     {
         private readonly DispatcherTimer tabHoverTimer = new DispatcherTimer();
         private TabViewItem hoveredTabViewItem = null;
+        public event EventHandler TabViewItemLoaded;
 
         private SettingsViewModel AppSettings => App.AppSettings;
 
@@ -34,19 +35,6 @@ namespace Files.UserControls.MultitaskingControl
             if (args.CollectionChange == Windows.Foundation.Collections.CollectionChange.ItemRemoved)
             {
                 App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(HorizontalTabView.SelectedItem as IAppInstance);
-            }
-
-            if (App.MainViewModel.TabStripSelectedIndex >= 0 && App.MainViewModel.TabStripSelectedIndex < Items.Count)
-            {
-                CurrentSelectedAppInstance = GetCurrentSelectedTabInstance();
-
-                if (CurrentSelectedAppInstance != null)
-                {
-                    OnCurrentInstanceChanged(new CurrentInstanceChangedEventArgs()
-                    {
-                        CurrentInstance = CurrentSelectedAppInstance,
-                    });
-                }
             }
         }
 
@@ -201,10 +189,6 @@ namespace Files.UserControls.MultitaskingControl
             }
         }
 
-        public override DependencyObject ContainerFromItem(IAppInstance item) => HorizontalTabView.ContainerFromItem(item);
-
-
-
         public UIElement ActionsControl
         {
             get { return (UIElement)GetValue(ActionsControlProperty); }
@@ -231,17 +215,13 @@ namespace Files.UserControls.MultitaskingControl
 
         private void TabViewItem_Loaded(object sender, RoutedEventArgs e)
         {
+            TabViewItemLoaded?.Invoke(sender, EventArgs.Empty);
             // fixes issue where tab would not show as selected when opened with path argument
             if (firstLoad)
             {
                 firstLoad = false;
                 (sender as TabViewItem).IsSelected = true;
             }
-        }
-
-        private void HorizontalTabView_TabSelectionChanged(object sender, CurrentInstanceChangedEventArgs e)
-        {
-            TabStrip_SelectionChanged(null, null);
         }
     }
 

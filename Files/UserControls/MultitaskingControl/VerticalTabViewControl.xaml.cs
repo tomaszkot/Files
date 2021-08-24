@@ -27,19 +27,6 @@ namespace Files.UserControls.MultitaskingControl
             {
                 App.MainViewModel.TabStripSelectedIndex = Items.IndexOf(SelectedItem as IAppInstance);
             }
-
-            if (App.MainViewModel.TabStripSelectedIndex >= 0 && App.MainViewModel.TabStripSelectedIndex < Items.Count)
-            {
-                CurrentSelectedAppInstance = GetCurrentSelectedTabInstance();
-
-                if (CurrentSelectedAppInstance != null)
-                {
-                    OnCurrentInstanceChanged(new CurrentInstanceChangedEventArgs()
-                    {
-                        CurrentInstance = CurrentSelectedAppInstance,
-                    });
-                }
-            }
         }
 
         private async void TabViewItem_Drop(object sender, DragEventArgs e)
@@ -162,7 +149,7 @@ namespace Files.UserControls.MultitaskingControl
             }
         }
 
-        private async void TabStrip_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
+        private void TabStrip_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
         {
             if (sender.TabItems.Count == 1)
             {
@@ -179,13 +166,6 @@ namespace Files.UserControls.MultitaskingControl
             //    sender.TabItems.Insert(indexOfTabViewItem, args.Tab);
             //    sender.SelectedIndex = selectedTabViewItemIndex;
             //}
-        }
-
-        public override DependencyObject ContainerFromItem(IAppInstance item) => ContainerFromItem(item);
-
-        private void BaseMultitaskingControl_TabSelectionChanged(object sender, CurrentInstanceChangedEventArgs e)
-        {
-            TabStrip_SelectionChanged(null, null);
         }
     }
 }

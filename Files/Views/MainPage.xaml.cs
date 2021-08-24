@@ -35,7 +35,7 @@ namespace Files.Views
         public SettingsViewModel AppSettings => App.AppSettings;
         public MainViewModel MainViewModel => App.MainViewModel;
 
-        public TabViewItem SelectedTabViewItem => (horizontalMultitaskingControl?.ContainerFromItem(ViewModel.SelectedTabItem) as TabViewItem);
+        public TabViewItem SelectedTabViewItem => horizontalMultitaskingControl?.ContainerFromItem(horizontalMultitaskingControl?.SelectedItem) as TabViewItem;
 
         public MainPageViewModel ViewModel
         {
@@ -74,11 +74,6 @@ namespace Files.Views
 
         }
 
-        private void HorizontalMultitaskingControl_TabSelectionChanged(object sender, CurrentInstanceChangedEventArgs e)
-        {
-            NotifyPropertyChanged(nameof(SelectedTabViewItem));
-        }
-
         private void AppSettings_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -89,7 +84,7 @@ namespace Files.Views
             }
         }
 
-        public BaseMultitaskingControl MultitaskingControl => VerticalTabs;
+        public BaseMultitaskingControl MultitaskingControl => horizontalMultitaskingControl;
 
         private void VerticalTabStrip_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -105,12 +100,78 @@ namespace Files.Views
 
         private void VerticalTabStripInvokeButton_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!(ViewModel.MultitaskingControl is VerticalTabViewControl))
+            if (ViewModel.MultitaskingControl is not VerticalTabViewControl)
             {
                 ViewModel.MultitaskingControl = VerticalTabs;
                 ViewModel.MultitaskingControls.Add(VerticalTabs);
-                ViewModel.MultitaskingControl.TabSelectionChanged += MultitaskingControl_CurrentInstanceChanged;
+                VerticalTabs.SelectionChanged += MultitaskingControl_SelectionChanged;
             }
+        }
+
+        private void MultitaskingControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var item = MultitaskingControl.ContainerFromIndex(App.MainViewModel.TabStripSelectedIndex);
+            if (item as TabViewItem != null && MultitaskingControl.SelectedItem != null)
+            {
+                if (!(item as TabViewItem).IsLoaded)
+                {
+                    return;
+                }
+
+                if (SidebarAdaptiveViewModel.PaneHolder != null)
+                {
+                    SidebarAdaptiveViewModel.PaneHolder.PropertyChanged -= PaneHolder_PropertyChanged;
+                }
+
+                var content = MultitaskingControl.GetCurrentSelectedTabInstance();
+
+                if (content is PaneHolderPage groupPage)
+                {
+                    if (!groupPage.IsLoaded)
+                    {
+                        groupPage.Loaded -= GroupPage_Loaded;
+                        groupPage.Loaded += GroupPage_Loaded;
+                    }
+                    else
+                    {
+                        InitializeSidebarFromPaneHolderPage(groupPage);
+                    }
+                }
+                else if (content is ModernShellPage singleInstancePage)
+                {
+                    SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(singleInstancePage.AppInstanceInfo.TabItemArguments.NavigationArg);
+                    UpdateStatusBarProperties();
+                    UpdateNavToolbarProperties();
+                    UpdatePreviewPaneProperties();
+
+                    content.ContentChanged -= TabItemContent_ContentChanged;
+                    content.ContentChanged += TabItemContent_ContentChanged;
+                }
+
+                NotifyPropertyChanged(nameof(SelectedTabViewItem));
+            }
+        }
+
+        private void InitializeSidebarFromPaneHolderPage(PaneHolderPage groupPage)
+        {
+            groupPage.ActivePane = groupPage.PanesControl.GetOrCreateElement(0) as IShellPage;
+            SidebarAdaptiveViewModel.PaneHolder = groupPage;
+            SidebarAdaptiveViewModel.PaneHolder.PropertyChanged += PaneHolder_PropertyChanged;
+            SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(groupPage.ActivePane?.AppInstanceInfo.TabItemArguments.NavigationArg);
+
+            UpdateStatusBarProperties();
+            UpdateNavToolbarProperties();
+            UpdatePreviewPaneProperties();
+
+            groupPage.ContentChanged -= TabItemContent_ContentChanged;
+            groupPage.ContentChanged += TabItemContent_ContentChanged;
+        }
+
+        private void GroupPage_Loaded(object sender, RoutedEventArgs e) 
+        {
+            var groupPage = sender as PaneHolderPage;
+            InitializeSidebarFromPaneHolderPage(groupPage);
+            groupPage.Loaded -= GroupPage_Loaded;
         }
 
         private void DragArea_Loaded(object sender, RoutedEventArgs e)
@@ -125,16 +186,54 @@ namespace Files.Views
 
         private void HorizontalMultitaskingControl_Loaded(object sender, RoutedEventArgs e)
         {
-            horizontalMultitaskingControl.TabSelectionChanged += HorizontalMultitaskingControl_TabSelectionChanged;
-            if (!(ViewModel.MultitaskingControl is HorizontalMultitaskingControl))
+            if (ViewModel.MultitaskingControl is not HorizontalMultitaskingControl)
             {
                 ViewModel.MultitaskingControl = horizontalMultitaskingControl;
                 ViewModel.MultitaskingControls.Add(horizontalMultitaskingControl);
-                ViewModel.MultitaskingControl.TabSelectionChanged += MultitaskingControl_CurrentInstanceChanged;
             }
+            horizontalMultitaskingControl.TabViewItemLoaded += HorizontalMultitaskingControl_TabViewItemLoaded;
+            horizontalMultitaskingControl.SelectionChanged += MultitaskingControl_SelectionChanged;
             if (AppSettings.IsVerticalTabFlyoutEnabled)
             {
                 FindName(nameof(VerticalTabStripInvokeButton));
+            }
+        }
+
+        private void HorizontalMultitaskingControl_TabViewItemLoaded(object sender, EventArgs e)
+        {
+            if (MultitaskingControl.SelectedItem != null)
+            {
+                if (SidebarAdaptiveViewModel.PaneHolder != null)
+                {
+                    SidebarAdaptiveViewModel.PaneHolder.PropertyChanged -= PaneHolder_PropertyChanged;
+                }
+
+                var content = MultitaskingControl.GetCurrentSelectedTabInstance();
+
+                if (content is PaneHolderPage groupPage)
+                {
+                    if (!groupPage.IsLoaded)
+                    {
+                        groupPage.Loaded -= GroupPage_Loaded;
+                        groupPage.Loaded += GroupPage_Loaded;
+                    }
+                    else
+                    {
+                        InitializeSidebarFromPaneHolderPage(groupPage);
+                    }
+                }
+                else if (content is ModernShellPage singleInstancePage)
+                {
+                    SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(singleInstancePage.AppInstanceInfo.TabItemArguments.NavigationArg);
+                    UpdateStatusBarProperties();
+                    UpdateNavToolbarProperties();
+                    UpdatePreviewPaneProperties();
+
+                    content.ContentChanged -= TabItemContent_ContentChanged;
+                    content.ContentChanged += TabItemContent_ContentChanged;
+                }
+
+                NotifyPropertyChanged(nameof(SelectedTabViewItem));
             }
         }
 
@@ -147,30 +246,6 @@ namespace Files.Views
                 UpdatePreviewPaneProperties();
                 UpdateNavToolbarProperties();
             }
-        }
-
-        public void MultitaskingControl_CurrentInstanceChanged(object sender, CurrentInstanceChangedEventArgs e)
-        {
-            if (SidebarAdaptiveViewModel.PaneHolder != null)
-            {
-                SidebarAdaptiveViewModel.PaneHolder.PropertyChanged -= PaneHolder_PropertyChanged;
-            }
-
-            if (e.CurrentInstance is IPaneHolder groupPage)
-            {
-                SidebarAdaptiveViewModel.PaneHolder = groupPage;
-                SidebarAdaptiveViewModel.PaneHolder.PropertyChanged += PaneHolder_PropertyChanged;
-                SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(groupPage.ActivePane?.AppInstanceInfo.TabItemArguments.NavigationArg);
-            }
-            else if (e.CurrentInstance is IShellPage singleInstancePage)
-            {
-                SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(singleInstancePage.AppInstanceInfo.TabItemArguments.NavigationArg);
-            }
-            UpdateStatusBarProperties();
-            UpdateNavToolbarProperties();
-            UpdatePreviewPaneProperties();
-            e.CurrentInstance.ContentChanged -= TabItemContent_ContentChanged;
-            e.CurrentInstance.ContentChanged += TabItemContent_ContentChanged;
         }
 
         private void PaneHolder_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

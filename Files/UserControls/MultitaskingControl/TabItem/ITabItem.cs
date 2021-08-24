@@ -5,7 +5,6 @@ using Windows.UI.Xaml;
 
 namespace Files.UserControls.MultitaskingControl
 {
-
     public interface ITabItemContent
     {
         public event EventHandler<TabItemArguments> ContentChanged;

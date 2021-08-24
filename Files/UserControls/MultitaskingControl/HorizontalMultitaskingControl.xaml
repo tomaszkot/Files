@@ -18,7 +18,6 @@
     DragLeave="TabStrip_DragLeave"
     IsAddTabButtonVisible="False"
     SelectedIndex="{x:Bind local1:App.MainViewModel.TabStripSelectedIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-    TabSelectionChanged="HorizontalTabView_TabSelectionChanged"
     TabCloseRequested="TabStrip_TabCloseRequested"
     TabDragCompleted="TabStrip_TabDragCompleted"
     TabDragStarting="TabStrip_TabDragStarting"

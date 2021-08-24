@@ -6,8 +6,6 @@ namespace Files.UserControls.MultitaskingControl
 {
     public interface IMultitaskingControl
     {
-        public event EventHandler<CurrentInstanceChangedEventArgs> TabSelectionChanged;
-
         public ObservableCollection<IAppInstance> Items { get; }
 
         public ITabItemContent GetCurrentSelectedTabInstance();

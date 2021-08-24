@@ -92,8 +92,6 @@
         </Grid.RowDefinitions>
         <Grid
             Grid.RowSpan="2"
-            Grid.Column="1"
-            Grid.ColumnSpan="2"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             Background="{ThemeResource PaneHolderPageBackgroundBrush}">
@@ -102,15 +100,23 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <muxc:ItemsRepeater x:Name="PanesControl" ItemsSource="{x:Bind Instances.AppInstanceInfos, Mode=OneWay}">
+            <muxc:ItemsRepeater x:Name="PanesControl" x:FieldModifier="public" ItemsSource="{x:Bind Instances.AppInstanceInfos, Mode=OneWay}">
                 <muxc:ItemsRepeater.Layout>
-                    <muxc:UniformGridLayout MinItemWidth="200"
-                                MinColumnSpacing="4"
-                                ItemsJustification="SpaceAround"/>
+                    <muxc:UniformGridLayout 
+                        MinItemWidth="200"
+                        MinItemHeight="200"
+                        MaximumRowsOrColumns="2"
+                        MinColumnSpacing="40"
+                        MinRowSpacing="40"
+                        Orientation="Horizontal"
+                        ItemsStretch="Uniform"
+                        ItemsJustification="SpaceBetween"/>
                 </muxc:ItemsRepeater.Layout>
                 <muxc:ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="multitaskingcontrol:AppInstanceInformation">
                         <local:ModernShellPage 
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
                             ContentChanged="Pane_ContentChanged"
                             CurrentInstanceBorderThickness="0,0,0,2"
                             IsPageMainPane="{x:Bind IsCurrentInstance, Mode=OneWay}" 
