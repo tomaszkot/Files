@@ -7,6 +7,7 @@ using Files.ViewModels;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Collections.ObjectModel;
 
 namespace Files.UserControls.MultitaskingControl
 {
@@ -14,7 +15,7 @@ namespace Files.UserControls.MultitaskingControl
     {
         public Guid Id { get; set; }
 
-        public List<AppInstanceInformation> AppInstanceInfos { get; }
+        public ObservableCollection<AppInstanceInformation> AppInstanceInfos { get; }
 
         public string Header { get; set; }
 

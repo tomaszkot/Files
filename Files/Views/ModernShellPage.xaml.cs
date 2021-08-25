@@ -520,16 +520,16 @@ namespace Files.Views
         public static readonly DependencyProperty NavParamsProperty =
             DependencyProperty.Register("NavParams", typeof(string), typeof(ModernShellPage), new PropertyMetadata(null));
 
-        private TabItemArguments tabItemArguments;
+        private TabItemArguments arguments;
 
-        public TabItemArguments TabItemArguments
+        public TabItemArguments Arguments
         {
-            get => tabItemArguments;
+            get => arguments;
             set
             {
-                if (tabItemArguments != value)
+                if (arguments != value)
                 {
-                    tabItemArguments = value;
+                    arguments = value;
                     if (AppInstanceInfo != null)
                     {
                         AppInstanceInfo.AppInstance.UpdateTabInfo();
@@ -616,11 +616,7 @@ namespace Files.Views
                 AppInstanceInfo.ContentPage.ResetItemOpacity();
             }
             var parameters = e.Parameter as NavigationArguments;
-            TabItemArguments = new TabItemArguments()
-            {
-                InitialPageType = typeof(ModernShellPage),
-                NavigationArg = parameters.IsSearchResultPage ? parameters.SearchPathParam : parameters.NavPathParam
-            };
+            Arguments.NavigationArg = parameters.IsSearchResultPage ? parameters.SearchPathParam : parameters.NavPathParam;
         }
 
         private async void KeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)

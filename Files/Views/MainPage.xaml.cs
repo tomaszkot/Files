@@ -24,6 +24,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
 using Files.Extensions;
+using Microsoft.Toolkit.Uwp.UI;
 
 namespace Files.Views
 {
@@ -154,7 +155,7 @@ namespace Files.Views
 
         private void InitializeSidebarFromPaneHolderPage(PaneHolderPage groupPage)
         {
-            groupPage.ActivePane = groupPage.PanesControl.GetOrCreateElement(0) as IShellPage;
+            groupPage.ActivePane = ((GridViewItem)groupPage.PanesControl.ContainerFromIndex(0)).FindDescendant<ModernShellPage>();
             SidebarAdaptiveViewModel.PaneHolder = groupPage;
             SidebarAdaptiveViewModel.PaneHolder.PropertyChanged += PaneHolder_PropertyChanged;
             SidebarAdaptiveViewModel.NotifyInstanceRelatedPropertiesChanged(groupPage.ActivePane?.AppInstanceInfo.TabItemArguments.NavigationArg);

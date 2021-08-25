@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using Files.ViewModels;
@@ -25,7 +26,7 @@ namespace Files.UserControls.MultitaskingControl
         private IconSource iconSource;
         private bool allowStorageItemDrop;
 
-        public List<AppInstanceInformation> AppInstanceInfos { get; } = new List<AppInstanceInformation>();
+        public ObservableCollection<AppInstanceInformation> AppInstanceInfos { get; } = new ObservableCollection<AppInstanceInformation>();
 
         public string Header
         {
@@ -77,13 +78,11 @@ namespace Files.UserControls.MultitaskingControl
             };
             info.FilesystemHelpers = new FilesystemHelpers(info, info.CancellationTokenSource.Token);
             AppInstanceInfos.Add(info);
-            OnPropertyChanged(nameof(AppInstanceInfos));
         }
 
         public void RemoveAppInstanceFromGroup(AppInstanceInformation info)
         {
             AppInstanceInfos.Remove(info);
-            OnPropertyChanged(nameof(AppInstanceInfos));
         }
 
         public async void UpdateTabInfo()
@@ -111,6 +110,7 @@ namespace Files.UserControls.MultitaskingControl
 
         public async void UpdateTabInfo(List<TabItemArguments> args)
         {
+            AppInstanceInfos.Clear();
             foreach (TabItemArguments arg in args)
             {
                 AddAppInstanceByArguments(arg);
@@ -133,7 +133,7 @@ namespace Files.UserControls.MultitaskingControl
 
             this.IconSource = new FontIconSource()
             {
-                Glyph = "&#xF57C;"
+                Glyph = "\uF57C"
             };
         }
 

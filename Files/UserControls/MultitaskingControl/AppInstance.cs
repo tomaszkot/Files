@@ -13,6 +13,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Xaml;
 using Files.Filesystem;
 using System.Threading;
+using System.Collections.ObjectModel;
 
 namespace Files.UserControls.MultitaskingControl
 {
@@ -24,7 +25,7 @@ namespace Files.UserControls.MultitaskingControl
         private IconSource iconSource;
         private bool allowStorageItemDrop;
 
-        public List<AppInstanceInformation> AppInstanceInfos { get; } = new List<AppInstanceInformation>();
+        public ObservableCollection<AppInstanceInformation> AppInstanceInfos { get; } = new ObservableCollection<AppInstanceInformation>();
 
         public string Header
         {
@@ -65,7 +66,6 @@ namespace Files.UserControls.MultitaskingControl
             };
             info.FilesystemHelpers = new FilesystemHelpers(info, info.CancellationTokenSource.Token);
             AppInstanceInfos.Insert(0, info);
-            OnPropertyChanged(nameof(AppInstanceInfos));
         }
 
         public async void UpdateTabInfo()

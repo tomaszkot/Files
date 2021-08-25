@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
@@ -15,6 +16,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
+using Microsoft.Toolkit.Uwp.UI;
 
 namespace Files.Views
 {
@@ -29,7 +31,7 @@ namespace Files.Views
         public SettingsViewModel AppSettings => App.AppSettings;
         public IFilesystemHelpers FilesystemHelpers => ActivePane?.FilesystemHelpers;
 
-        public List<AppInstanceInformation> TabItemArguments { get; set; }
+        public ObservableCollection<AppInstanceInformation> TabItemArguments { get; set; }
 
         private bool _windowIsCompact = Window.Current.Bounds.Width <= 750;
 
@@ -175,7 +177,7 @@ namespace Files.Views
                 case (true, true, false, VirtualKey.Left): // ctrl + shift + "<-" select left pane
                     if (AppSettings.IsMultiPaneEnabled)
                     {
-                        ActivePane = PanesControl.TryGetElement(0) as IShellPage;
+                        ActivePane = ((GridViewItem)PanesControl.ContainerFromIndex(0)).FindDescendant<ModernShellPage>();
                     }
                     break;
 
@@ -186,7 +188,7 @@ namespace Files.Views
                         {
                             OpenPathInNewPane("NewTab".GetLocalized());
                         }
-                        ActivePane = PanesControl.TryGetElement(1) as IShellPage;
+                        ActivePane = ((GridViewItem)PanesControl.ContainerFromIndex(1)).FindDescendant<ModernShellPage>();
                     }
                     break;
 
@@ -220,7 +222,7 @@ namespace Files.Views
             Window.Current.SizeChanged -= Current_SizeChanged;
             foreach(AppInstanceInformation info in Instances.AppInstanceInfos)
             {
-                (PanesControl.TryGetElement(Instances.AppInstanceInfos.IndexOf(info)) as IShellPage)?.Dispose();
+                ((GridViewItem)PanesControl.ContainerFromIndex(Instances.AppInstanceInfos.IndexOf(info))).FindDescendant<ModernShellPage>().Dispose();
             }
         }
 

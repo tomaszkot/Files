@@ -132,7 +132,7 @@
                 ToolTipService.ToolTip="{x:Null}">
                             <muxc:TabViewItem.ContentTemplate>
                                 <DataTemplate x:DataType="local:AppInstance">
-                                    <views:ModernShellPage TabItemArguments="{x:Bind AppInstanceInfos[0].TabItemArguments, Mode=OneWay}"/>
+                                    <views:ModernShellPage Arguments="{x:Bind AppInstanceInfos[0].TabItemArguments, Mode=OneWay}"/>
                                 </DataTemplate>
                             </muxc:TabViewItem.ContentTemplate>
                         </muxc:TabViewItem>

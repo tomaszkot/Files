@@ -5,6 +5,7 @@ using Files.ViewModels;
 using Files.Views;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace Files
@@ -65,7 +66,7 @@ namespace Files
 
         public IShellPage ActivePane { get; set; }
         public IFilesystemHelpers FilesystemHelpers { get; }
-        public List<AppInstanceInformation> TabItemArguments { get; }
+        public ObservableCollection<AppInstanceInformation> TabItemArguments { get; }
 
         public void OpenPathInNewPane(string path);
 
