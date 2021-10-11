@@ -1,4 +1,7 @@
-﻿using Windows.UI.Xaml.Controls;
+﻿using System;
+using System.Threading.Tasks;
+using Windows.Services.Store;
+using Windows.UI.Xaml.Controls;
 
 namespace Files.SettingsPages
 {

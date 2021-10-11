@@ -217,6 +217,16 @@
                 </Button>
             </local:SettingsBlockControl>
 
+            <local:SettingsBlockControl Title="Join preview" HorizontalAlignment="Stretch">
+                <local:SettingsBlockControl.Icon>
+                    <FontIcon Glyph="&#xE838;" />
+                </local:SettingsBlockControl.Icon>
+
+                <Button
+                    Command="{Binding JoinFlightGroupCommand}"
+                    Content="Join" />
+            </local:SettingsBlockControl>
+
             <TextBlock
                 x:Uid="SettingsAboutThirdPartyLicenses"
                 Padding="0,12,0,0"

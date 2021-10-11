@@ -3,8 +3,12 @@ using Microsoft.Toolkit.Mvvm.Input;
 using Microsoft.Toolkit.Uwp;
 using Microsoft.Toolkit.Uwp.Helpers;
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Services.Store;
 using Windows.System;
 using Windows.UI.Xaml.Controls;
 
@@ -14,6 +18,7 @@ namespace Files.ViewModels.SettingsViewModels
     {
         public RelayCommand OpenLogLocationCommand => new RelayCommand(() => SettingsViewModel.OpenLogLocation());
         public RelayCommand CopyVersionInfoCommand => new RelayCommand(() => CopyVersionInfo());
+        public RelayCommand JoinFlightGroupCommand => new RelayCommand(() => JoinFlightGroup());
 
         public RelayCommand<ItemClickEventArgs> ClickAboutFeedbackItemCommand =>
             new RelayCommand<ItemClickEventArgs>(ClickAboutFeedbackItem);
@@ -27,6 +32,25 @@ namespace Files.ViewModels.SettingsViewModels
                 dataPackage.SetText(Version + "\nOS Version: " + SystemInformation.Instance.OperatingSystemVersion);
                 Clipboard.SetContent(dataPackage);
             });
+        }
+
+        public async Task<bool> AddUserToFlightGroup()
+        {
+            StoreSendRequestResult result = await StoreRequestHelper.SendRequestAsync(
+                StoreContext.GetDefault(), 8,
+                "{ \"type\": \"AddToFlightGroup\", \"parameters\": { \"flightGroupId\": \"1152921504607280740\" } }");
+
+            if (result.ExtendedError == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public async void JoinFlightGroup()
+        {
+            await AddUserToFlightGroup();
         }
 
         public string Version
