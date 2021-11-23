@@ -2,9 +2,7 @@
 using Files.Extensions;
 using Files.Helpers;
 using Files.Services;
-using Files.UserControls;
 using Files.ViewModels;
-using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
@@ -15,13 +13,11 @@ using System.Threading.Tasks;
 
 namespace Files.Filesystem
 {
-    public class LibraryManager : IDisposable
+    public class LibraryManager
     {
         private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
 
         public MainViewModel MainViewModel => App.MainViewModel;
-
-        private LocationItem librarySection;
 
         public BulkConcurrentObservableCollection<LibraryLocationItem> Libraries { get; } = new BulkConcurrentObservableCollection<LibraryLocationItem>();
 
@@ -56,7 +52,7 @@ namespace Files.Filesystem
 
         public async Task EnumerateLibrariesAsync()
         {
-            if (!App.AppSettings.ShowLibrarySection)
+            if (!UserSettingsService.AppearanceSettingsService.ShowLibrarySection)
             {
                 return;
             }
@@ -76,7 +72,7 @@ namespace Files.Filesystem
 
         public async void UpdateLibrariesSectionVisibility()
         {
-            if (App.AppSettings.ShowLibrarySection)
+            if (UserSettingsService.AppearanceSettingsService.ShowLibrarySection)
             {
                 await EnumerateLibrariesAsync();
             }

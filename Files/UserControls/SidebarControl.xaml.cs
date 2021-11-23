@@ -1084,6 +1084,8 @@ namespace Files.UserControls
                     };
                 }
             }
+
+            (sender as Microsoft.UI.Xaml.Controls.NavigationViewItem).Loaded -= SidebarLocationItem_Loaded;
         }
 
         private async void LoadShellMenuItems(Microsoft.UI.Xaml.Controls.CommandBarFlyout itemContextMenuFlyout)

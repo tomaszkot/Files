@@ -113,7 +113,7 @@ namespace Files.DataModels
                 {
                     Text = ApplicationData.Current.LocalSettings.Values.Get("RecycleBin_Title", "Recycle Bin"),
                     IsDefaultLocation = true,
-                    Icon = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResource(Constants.ImageRes.RecycleBin)),
+                    IconData = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceBytes(Constants.ImageRes.RecycleBin)),
                     Path = CommonPaths.RecycleBinPath
                 };
                 // Add recycle bin to sidebar, title is read from LocalSettings (provided by the fulltrust process)
@@ -320,9 +320,8 @@ namespace Files.DataModels
                 {
                     Text = "SidebarHome".GetLocalized(),
                     Section = SectionType.Home,
-                    Font = MainViewModel.FontName,
                     IsDefaultLocation = true,
-                    Icon = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => new BitmapImage(new Uri("ms-appx:///Assets/FluentIcons/Home.png"))),
+                    IconSource = new Uri("ms-appx:///Assets/FluentIcons/Home.png"),
                     Path = "Home".GetLocalized(),
                     ChildItems = new ObservableCollection<INavigationControlItem>()
                 };
@@ -331,8 +330,7 @@ namespace Files.DataModels
                     Text = "SidebarFavorites".GetLocalized(),
                     Section = SectionType.Favorites,
                     SelectsOnInvoked = false,
-                    Icon = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResource(Constants.Shell32.QuickAccess)),
-                    Font = MainViewModel.FontName,
+                    IconData = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceBytes(Constants.Shell32.QuickAccess)),
                     ChildItems = new ObservableCollection<INavigationControlItem>()
                 };
 

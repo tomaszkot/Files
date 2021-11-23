@@ -75,7 +75,6 @@ namespace Files.Views
 
             ToggleFullScreenAcceleratorCommand = new RelayCommand<KeyboardAcceleratorInvokedEventArgs>(ToggleFullScreenAccelerator);
 
-            App.AppSettings.PropertyChanged += AppSettings_PropertyChanged;
             App.DrivesManager.RefreshCompleted += DrivesManager_RefreshCompleted;
             App.DrivesManager.RemoveDrivesSidebarSection += SidebarControl_RemoveSidebarSection;
             App.CloudDrivesManager.RefreshCompleted += CloudDrivesManager_RefreshCompleted;
@@ -112,14 +111,14 @@ namespace Files.Views
                 try
                 {
                     var section = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "SidebarLibraries".GetLocalized()) as LocationItem;
-                    if (App.AppSettings.ShowLibrarySection && section == null)
+                    if (UserSettingsService.AppearanceSettingsService.ShowLibrarySection && section == null)
                     {
                         section = new LocationItem
                         {
                             Text = "SidebarLibraries".GetLocalized(),
                             Section = SectionType.Library,
                             SelectsOnInvoked = false,
-                            IconData = SidebarPinnedModel.IconResources?.FirstOrDefault(x => x.Index == Constants.ImageRes.Libraries)?.IconDataBytes,
+                            IconData = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceBytes(Constants.ImageRes.Libraries)),
                             ChildItems = new ObservableCollection<INavigationControlItem>()
                         };
                         var index = (SidebarControl.SideBarItems.Any(item => item.Section == SectionType.Favorites) ? 1 : 0); // After favorites section
@@ -140,7 +139,7 @@ namespace Files.Views
         private async void Libraries_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             var librarySection = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "SidebarLibraries".GetLocalized()) as LocationItem;
-            if (!App.AppSettings.ShowLibrarySection || librarySection == null)
+            if (!UserSettingsService.AppearanceSettingsService.ShowLibrarySection || librarySection == null)
             {
                 return;
             }
@@ -213,7 +212,7 @@ namespace Files.Views
                 try
                 {
                     var section = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "WSL".GetLocalized()) as LocationItem;
-                    if (App.AppSettings.ShowWslSection && section == null)
+                    if (UserSettingsService.AppearanceSettingsService.ShowWslSection && section == null)
                     {
                         section = new LocationItem()
                         {
@@ -264,14 +263,14 @@ namespace Files.Views
                 try
                 {
                     var section = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "SidebarNetworkDrives".GetLocalized()) as LocationItem;
-                    if (App.AppSettings.ShowNetworkDrivesSection && section == null)
+                    if (UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection && section == null)
                     {
                         section = new LocationItem()
                         {
                             Text = "SidebarNetworkDrives".GetLocalized(),
                             Section = SectionType.Network,
                             SelectsOnInvoked = false,
-                            IconData = SidebarPinnedModel.IconResources?.FirstOrDefault(x => x.Index == Constants.ImageRes.NetworkDrives)?.IconDataBytes,
+                            IconData = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceBytes(Constants.ImageRes.NetworkDrives)),
                             ChildItems = new ObservableCollection<INavigationControlItem>()
                         };
                         var index = (SidebarControl.SideBarItems.Any(item => item.Section == SectionType.Favorites) ? 1 : 0) +
@@ -289,7 +288,7 @@ namespace Files.Views
                         .OrderByDescending(o => string.Equals(o.Text, "Network".GetLocalized(), StringComparison.OrdinalIgnoreCase))
                         .ThenBy(o => o.Text))
                         {
-                            var resource = SidebarPinnedModel.IconResources?.FirstOrDefault(x => x.Index == Constants.ImageRes.Folder);
+                            var resource = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceInfo(Constants.ImageRes.Folder));
 
                             drive.ThumbnailData = resource?.IconDataBytes;
                             if (!section.ChildItems.Contains(drive))
@@ -314,14 +313,14 @@ namespace Files.Views
                 try
                 {
                     var section = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "SidebarDrives".GetLocalized()) as LocationItem;
-                    if (App.AppSettings.ShowDrivesSection && section == null)
+                    if (UserSettingsService.AppearanceSettingsService.ShowDrivesSection && section == null)
                     {
                         section = new LocationItem()
                         {
                             Text = "SidebarDrives".GetLocalized(),
                             Section = SectionType.Drives,
                             SelectsOnInvoked = false,
-                            IconData = SidebarPinnedModel.IconResources?.FirstOrDefault(x => x.Index == Constants.ImageRes.ThisPC)?.IconDataBytes,
+                            IconData = await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => UIHelpers.GetIconResourceBytes(Constants.ImageRes.ThisPC)),
                             ChildItems = new ObservableCollection<INavigationControlItem>()
                         };
                         var index = (SidebarControl.SideBarItems.Any(item => item.Section == SectionType.Favorites) ? 1 : 0) +
@@ -386,7 +385,7 @@ namespace Files.Views
                 try
                 {
                     var section = SidebarControl.SideBarItems.FirstOrDefault(x => x.Text == "SidebarCloudDrives".GetLocalized()) as LocationItem;
-                    if (App.AppSettings.ShowCloudDrivesSection && section == null && drives.Any())
+                    if (UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection && section == null && drives.Any())
                     {
                         section = new LocationItem()
                         {

@@ -92,6 +92,16 @@ namespace Files.Helpers
             return null;
         }
 
+        public static async Task<byte[]> GetIconResourceBytes(int index)
+        {
+            var iconInfo = await GetIconResourceInfo(index);
+            if (iconInfo != null)
+            {
+                return iconInfo.IconDataBytes;
+            }
+            return null;
+        }
+
         private static async Task<IEnumerable<IconFileInfo>> LoadSidebarIconResources()
         {
             const string imageres = @"C:\Windows\System32\imageres.dll";
