@@ -1,9 +1,13 @@
-﻿using Files.DataModels;
+﻿using Files.Common;
+using Files.Extensions;
 using Files.Helpers;
+using Files.Services;
 using Files.ViewModels;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Windows.UI.ViewManagement;
@@ -22,8 +26,10 @@ namespace Files.UserControls
             this.InitializeComponent();
         }
 
+        public IUserSettingsService UserSettingsService { get; } = 
+            Ioc.Default.GetService<IUserSettingsService>();
+
         public MainViewModel MainViewModel => App.MainViewModel;
-        public SettingsViewModel AppSettings => App.AppSettings;
 
         public NavToolbarViewModel ViewModel
         {
@@ -136,8 +142,6 @@ namespace Files.UserControls
         /// <returns></returns>
         private string GetLocalizedString(string str) => str.GetLocalized();
 
-        private List<ShellNewEntry> cachedNewContextMenuEntries { get; set; }
-
         private void NewEmptySpace_Opening(object sender, object e)
         {
             if (!ViewModel.InstanceViewModel.CanCreateFileInPage)
@@ -146,6 +150,7 @@ namespace Files.UserControls
                 shell.ForEach(x => NewEmptySpace.Items.Remove(x));
                 return;
             }
+            var cachedNewContextMenuEntries = ContextFlyoutItemHelper.CachedNewContextMenuEntries.IsCompletedSuccessfully ? ContextFlyoutItemHelper.CachedNewContextMenuEntries.Result : null;
             if (cachedNewContextMenuEntries == null)
             {
                 return;
@@ -156,13 +161,12 @@ namespace Files.UserControls
                 foreach (var newEntry in Enumerable.Reverse(cachedNewContextMenuEntries))
                 {
                     MenuFlyoutItem menuLayoutItem;
-                    if (newEntry.Icon != null)
+                    if (!string.IsNullOrEmpty(newEntry.IconBase64))
                     {
-                        BitmapImage image = null;
-                        image = new BitmapImage();
-#pragma warning disable CS4014
-                        image.SetSourceAsync(newEntry.Icon);
-#pragma warning restore CS4014
+                        byte[] bitmapData = Convert.FromBase64String(newEntry.IconBase64);
+                        using var ms = new MemoryStream(bitmapData);
+                        var image = new BitmapImage();
+                        _ = image.SetSourceAsync(ms.AsRandomAccessStream());
                         menuLayoutItem = new MenuFlyoutItemWithImage()
                         {
                             Text = newEntry.Name,
@@ -187,11 +191,6 @@ namespace Files.UserControls
                     NewEmptySpace.Items.Insert(separatorIndex + 1, menuLayoutItem);
                 }
             }
-        }
-
-        private async void ContextCommandBar_Loaded(object sender, RoutedEventArgs e)
-        {
-            cachedNewContextMenuEntries = await RegistryHelper.GetNewContextMenuEntries();
         }
     }
 }

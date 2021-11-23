@@ -1,7 +1,9 @@
 ﻿using Files.Filesystem;
+using Files.Services;
 using Files.UserControls.MultitaskingControl;
 using Files.ViewModels;
 using Files.Views.LayoutModes;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.ComponentModel;
@@ -18,6 +20,8 @@ namespace Files.Views
 {
     public sealed partial class PaneHolderPage : Page, IPaneHolder, ITabItemContent
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public bool IsLeftPaneActive => ActivePane == PaneLeft;
         public bool IsRightPaneActive => ActivePane == PaneRight;
 
@@ -25,7 +29,6 @@ namespace Files.Views
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public SettingsViewModel AppSettings => App.AppSettings;
         public IFilesystemHelpers FilesystemHelpers => ActivePane?.FilesystemHelpers;
 
         private TabItemArguments tabItemArguments;
@@ -77,12 +80,12 @@ namespace Files.Views
 
         public bool IsMultiPaneEnabled
         {
-            get => AppSettings.IsDualPaneEnabled && !(Window.Current.Bounds.Width <= 750);
+            get => UserSettingsService.MultitaskingSettingsService.IsDualPaneEnabled && !(Window.Current.Bounds.Width <= 750);
         }
 
-        private string navParamsLeft;
+        private NavigationParams navParamsLeft;
 
-        public string NavParamsLeft
+        public NavigationParams NavParamsLeft
         {
             get => navParamsLeft;
             set
@@ -95,9 +98,9 @@ namespace Files.Views
             }
         }
 
-        private string navParamsRight;
+        private NavigationParams navParamsRight;
 
-        public string NavParamsRight
+        public NavigationParams NavParamsRight
         {
             get => navParamsRight;
             set
@@ -144,7 +147,7 @@ namespace Files.Views
             {
                 if (ActivePane.IsColumnView)
                 {
-                    return (ActivePane.SlimContentPage as ColumnViewBrowser).LastColumnShellPage;
+                    return (ActivePane.SlimContentPage as ColumnViewBrowser).ActiveColumnShellPage;
                 }
 
                 return ActivePane;
@@ -197,10 +200,20 @@ namespace Files.Views
             this.InitializeComponent();
             Window.Current.SizeChanged += Current_SizeChanged;
             this.ActivePane = PaneLeft;
-            this.IsRightPaneVisible = IsMultiPaneEnabled && AppSettings.AlwaysOpenDualPaneInNewTab;
-            App.AppSettings.PropertyChanged += AppSettings_PropertyChanged;
+            this.IsRightPaneVisible = IsMultiPaneEnabled && UserSettingsService.MultitaskingSettingsService.AlwaysOpenDualPaneInNewTab;
+            UserSettingsService.OnSettingChangedEvent += UserSettingsService_OnSettingChangedEvent;
 
             // TODO: fallback / error when failed to get NavigationViewCompactPaneLength value?
+        }
+
+        private void UserSettingsService_OnSettingChangedEvent(object sender, EventArguments.SettingChangedEventArgs e)
+        {
+            switch (e.settingName)
+            {
+                case nameof(UserSettingsService.MultitaskingSettingsService.IsDualPaneEnabled):
+                    NotifyPropertyChanged(nameof(IsMultiPaneEnabled));
+                    break;
+            }
         }
 
         private void Current_SizeChanged(object sender, WindowSizeChangedEventArgs e)
@@ -214,13 +227,21 @@ namespace Files.Views
 
             if (eventArgs.Parameter is string navPath)
             {
-                NavParamsLeft = navPath;
-                NavParamsRight = "NewTab".GetLocalized();
+                NavParamsLeft = new NavigationParams { NavPath = navPath };
+                NavParamsRight = new NavigationParams { NavPath = "Home".GetLocalized() };
             }
             if (eventArgs.Parameter is PaneNavigationArguments paneArgs)
             {
-                NavParamsLeft = paneArgs.LeftPaneNavPathParam;
-                NavParamsRight = paneArgs.RightPaneNavPathParam;
+                NavParamsLeft = new NavigationParams
+                {
+                    NavPath = paneArgs.LeftPaneNavPathParam,
+                    SelectItem = paneArgs.LeftPaneSelectItemParam
+                };
+                NavParamsRight = new NavigationParams
+                {
+                    NavPath = paneArgs.RightPaneNavPathParam,
+                    SelectItem = paneArgs.RightPaneSelectItemParam
+                };
                 IsRightPaneVisible = IsMultiPaneEnabled && paneArgs.RightPaneNavPathParam != null;
             }
 
@@ -229,20 +250,12 @@ namespace Files.Views
                 InitialPageType = typeof(PaneHolderPage),
                 NavigationArg = new PaneNavigationArguments()
                 {
-                    LeftPaneNavPathParam = NavParamsLeft,
-                    RightPaneNavPathParam = IsRightPaneVisible ? NavParamsRight : null
+                    LeftPaneNavPathParam = NavParamsLeft?.NavPath,
+                    LeftPaneSelectItemParam = NavParamsLeft?.SelectItem,
+                    RightPaneNavPathParam = IsRightPaneVisible ? NavParamsRight?.NavPath : null,
+                    RightPaneSelectItemParam = IsRightPaneVisible ? NavParamsRight?.SelectItem : null,
                 }
             };
-        }
-
-        private void AppSettings_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            switch (e.PropertyName)
-            {
-                case nameof(App.AppSettings.IsDualPaneEnabled):
-                    NotifyPropertyChanged(nameof(IsMultiPaneEnabled));
-                    break;
-            }
         }
 
         private void PaneLeft_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -285,7 +298,7 @@ namespace Files.Views
         public void OpenPathInNewPane(string path)
         {
             IsRightPaneVisible = true;
-            NavParamsRight = path;
+            NavParamsRight = new NavigationParams { NavPath = path };
         }
 
         private void KeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -298,18 +311,18 @@ namespace Files.Views
             switch (c: ctrl, s: shift, m: menu, k: args.KeyboardAccelerator.Key)
             {
                 case (true, true, false, VirtualKey.Left): // ctrl + shift + "<-" select left pane
-                    if (AppSettings.IsDualPaneEnabled)
+                    if (UserSettingsService.MultitaskingSettingsService.IsDualPaneEnabled)
                     {
                         ActivePane = PaneLeft;
                     }
                     break;
 
                 case (true, true, false, VirtualKey.Right): // ctrl + shift + "->" select right pane
-                    if (AppSettings.IsDualPaneEnabled)
+                    if (UserSettingsService.MultitaskingSettingsService.IsDualPaneEnabled)
                     {
-                        if (string.IsNullOrEmpty(NavParamsRight))
+                        if (string.IsNullOrEmpty(NavParamsRight?.NavPath))
                         {
-                            NavParamsRight = "NewTab".GetLocalized();
+                            NavParamsRight = new NavigationParams { NavPath = "Home".GetLocalized() };
                         }
                         IsRightPaneVisible = true;
                         ActivePane = PaneRight;
@@ -321,11 +334,11 @@ namespace Files.Views
                     break;
 
                 case (false, true, true, VirtualKey.Add): // alt + shift + "+" open pane
-                    if (AppSettings.IsDualPaneEnabled)
+                    if (UserSettingsService.MultitaskingSettingsService.IsDualPaneEnabled)
                     {
-                        if (string.IsNullOrEmpty(NavParamsRight))
+                        if (string.IsNullOrEmpty(NavParamsRight?.NavPath))
                         {
-                            NavParamsRight = "NewTab".GetLocalized();
+                            NavParamsRight = new NavigationParams { NavPath = "Home".GetLocalized() };
                         }
                         IsRightPaneVisible = true;
                     }
@@ -336,14 +349,6 @@ namespace Files.Views
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void Dispose()
-        {
-            App.AppSettings.PropertyChanged -= AppSettings_PropertyChanged;
-            Window.Current.SizeChanged -= Current_SizeChanged;
-            PaneLeft?.Dispose();
-            PaneRight?.Dispose();
         }
 
         public void CloseActivePane()
@@ -361,11 +366,21 @@ namespace Files.Views
         {
             (sender as UIElement).AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(PaneRight_PointerPressed), true);
         }
+
+        public void Dispose()
+        {
+            UserSettingsService.OnSettingChangedEvent -= UserSettingsService_OnSettingChangedEvent;
+            Window.Current.SizeChanged -= Current_SizeChanged;
+            PaneLeft?.Dispose();
+            PaneRight?.Dispose();
+        }
     }
 
     public class PaneNavigationArguments
     {
         public string LeftPaneNavPathParam { get; set; } = null;
+        public string LeftPaneSelectItemParam { get; set; } = null;
         public string RightPaneNavPathParam { get; set; } = null;
+        public string RightPaneSelectItemParam { get; set; } = null;
     }
 }

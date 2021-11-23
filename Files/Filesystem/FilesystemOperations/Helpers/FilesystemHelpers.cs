@@ -6,8 +6,10 @@ using Files.Extensions;
 using Files.Filesystem.FilesystemHistory;
 using Files.Helpers;
 using Files.Interacts;
+using Files.Services;
 using Files.ViewModels;
 using Files.ViewModels.Dialogs;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
@@ -61,6 +63,12 @@ namespace Files.Filesystem
 
         #endregion Private Members
 
+        #region Properties
+
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
+        #endregion
+
         #region Constructor
 
         public FilesystemHelpers(IShellPage associatedInstance, CancellationToken cancellationToken)
@@ -107,7 +115,7 @@ namespace Files.Filesystem
             var deleteFromRecycleBin = source.Select(item => item.Path).Any(path => recycleBinHelpers.IsPathUnderRecycleBin(path));
             var canBeSentToBin = !deleteFromRecycleBin && await recycleBinHelpers.HasRecycleBin(source.FirstOrDefault()?.Path);
 
-            if (App.AppSettings.ShowConfirmDeleteDialog && showDialog) // Check if the setting to show a confirmation dialog is on
+            if (UserSettingsService.PreferencesSettingsService.ShowConfirmDeleteDialog && showDialog) // Check if the setting to show a confirmation dialog is on
             {
                 List<FilesystemItemsOperationItemModel> incomingItems = new List<FilesystemItemsOperationItemModel>();
 
@@ -134,12 +142,7 @@ namespace Files.Filesystem
                     incomingItems,
                     new List<FilesystemItemsOperationItemModel>()));
 
-                if (UIHelpers.IsAnyContentDialogOpen())
-                {
-                    // Only a single ContentDialog can be open at any time.
-                    return ReturnResult.Cancelled;
-                }
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await dialog.TryShowAsync();
 
                 if (result != ContentDialogResult.Primary)
                 {
@@ -297,7 +300,7 @@ namespace Files.Filesystem
 
             banner.ErrorCode.ProgressChanged += (s, e) => returnStatus = e.ToStatus();
 
-            if (App.AppSettings.ShowConfirmDeleteDialog && showDialog) // Check if the setting to show a confirmation dialog is on
+            if (UserSettingsService.PreferencesSettingsService.ShowConfirmDeleteDialog && showDialog) // Check if the setting to show a confirmation dialog is on
             {
                 List<FilesystemItemsOperationItemModel> incomingItems = new List<FilesystemItemsOperationItemModel>();
 
@@ -321,12 +324,7 @@ namespace Files.Filesystem
                     incomingItems,
                     new List<FilesystemItemsOperationItemModel>()));
 
-                if (UIHelpers.IsAnyContentDialogOpen())
-                {
-                    // Only a single ContentDialog can be open at any time.
-                    return ReturnResult.Cancelled;
-                }
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await dialog.TryShowAsync();
 
                 if (result != ContentDialogResult.Primary)
                 {
@@ -401,7 +399,7 @@ namespace Files.Filesystem
                 {
                     return default;
                 }
-                if (destination.StartsWith(App.AppSettings.RecycleBinPath))
+                if (destination.StartsWith(CommonPaths.RecycleBinPath))
                 {
                     return await RecycleItemsFromClipboard(packageView, destination, showDialog, registerHistory);
                 }
@@ -418,8 +416,12 @@ namespace Files.Filesystem
                     // Open with piggybacks off of the link operation, since there isn't one for it
                     if (isTargetExecutable)
                     {
-                        var items = await packageView.GetStorageItemsAsync();
-                        NavigationHelpers.OpenItemsWithExecutable(associatedInstance, items.ToList(), destination);
+                        var handledByFtp = await CheckDragNeedsFulltrust(packageView);
+                        if (!handledByFtp)
+                        {
+                            var items = await GetDraggedStorageItems(packageView);
+                            NavigationHelpers.OpenItemsWithExecutable(associatedInstance, items.ToList(), destination);
+                        }
                         return ReturnResult.Success;
                     }
                     else
@@ -582,8 +584,8 @@ namespace Files.Filesystem
 
         public async Task<ReturnResult> CopyItemsFromClipboard(DataPackageView packageView, string destination, bool showDialog, bool registerHistory)
         {
-            var (handledByFtp, source) = await GetDraggedStorageItems(packageView);
-            source ??= new List<IStorageItemWithPath>();
+            var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(packageView);
+            var source = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(packageView);
 
             if (handledByFtp)
             {
@@ -817,8 +819,8 @@ namespace Files.Filesystem
                 return ReturnResult.BadArgumentException;
             }
 
-            var (handledByFtp, source) = await GetDraggedStorageItems(packageView);
-            source ??= new List<IStorageItemWithPath>();
+            var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(packageView);
+            var source = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(packageView);
 
             if (handledByFtp)
             {
@@ -920,8 +922,8 @@ namespace Files.Filesystem
                 return ReturnResult.BadArgumentException;
             }
 
-            var (handledByFtp, source) = await GetDraggedStorageItems(packageView);
-            source ??= new List<IStorageItemWithPath>();
+            var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(packageView);
+            var source = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(packageView);
 
             if (handledByFtp)
             {
@@ -956,8 +958,8 @@ namespace Files.Filesystem
                 return ReturnResult.BadArgumentException;
             }
 
-            var (handledByFtp, source) = await GetDraggedStorageItems(packageView);
-            source ??= new List<IStorageItemWithPath>();
+            var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(packageView);
+            var source = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(packageView);
 
             if (handledByFtp)
             {
@@ -1013,12 +1015,7 @@ namespace Files.Filesystem
                     incomingItems,
                     conflictingItems));
 
-                if (UIHelpers.IsAnyContentDialogOpen())
-                {
-                    // Only a single ContentDialog can be open at any time.
-                    return (new List<FileNameConflictResolveOptionType>(), true);
-                }
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await dialog.TryShowAsync();
 
                 if (mustResolveConflicts) // If there were conflicts, result buttons are different
                 {
@@ -1064,7 +1061,29 @@ namespace Files.Filesystem
             return packageView != null && (packageView.Contains(StandardDataFormats.StorageItems) || (packageView.Properties.TryGetValue("FileDrop", out var data)));
         }
 
-        public static async Task<(bool handledByFtp, IEnumerable<IStorageItemWithPath> items)> GetDraggedStorageItems(DataPackageView packageView)
+        public static async Task<bool> CheckDragNeedsFulltrust(DataPackageView packageView)
+        {
+            if (packageView.Contains(StandardDataFormats.StorageItems))
+            {
+                try
+                {
+                    _ = await packageView.GetStorageItemsAsync();
+                    return false;
+                }
+                catch (Exception ex) when ((uint)ex.HResult == 0x80040064 || (uint)ex.HResult == 0x8004006A)
+                {
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    App.Logger.Warn(ex, ex.Message);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        public static async Task<IEnumerable<IStorageItemWithPath>> GetDraggedStorageItems(DataPackageView packageView)
         {
             var itemsList = new List<IStorageItemWithPath>();
             if (packageView.Contains(StandardDataFormats.StorageItems))
@@ -1076,12 +1095,12 @@ namespace Files.Filesystem
                 }
                 catch (Exception ex) when ((uint)ex.HResult == 0x80040064 || (uint)ex.HResult == 0x8004006A)
                 {
-                    return (true, itemsList);
+                    return itemsList;
                 }
                 catch (Exception ex)
                 {
                     App.Logger.Warn(ex, ex.Message);
-                    return (false, itemsList);
+                    return itemsList;
                 }
             }
             if (packageView.Properties.TryGetValue("FileDrop", out var data))
@@ -1091,7 +1110,7 @@ namespace Files.Filesystem
                     itemsList.AddRange(source);
                 }
             }
-            return (false, itemsList);
+            return itemsList;
         }
 
         public static bool ContainsRestrictedCharacters(string input)

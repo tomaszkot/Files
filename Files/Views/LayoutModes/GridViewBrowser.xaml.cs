@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Storage;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -221,9 +222,13 @@ namespace Files.Views.LayoutModes
             }
         }
 
-        private void FileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void FileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SelectedItems = FileList.SelectedItems.Cast<ListedItem>().Where(x => x != null).ToList();
+            if (SelectedItems.Count == 1)
+            {
+                await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance, true);
+            }
         }
 
         override public void StartRenameItem()
@@ -269,7 +274,7 @@ namespace Files.Views.LayoutModes
             textBox.KeyDown += RenameTextBox_KeyDown;
 
             int selectedTextLength = SelectedItem.ItemName.Length;
-            if (!SelectedItem.IsShortcutItem && App.AppSettings.ShowFileExtensions)
+            if (!SelectedItem.IsShortcutItem && UserSettingsService.PreferencesSettingsService.ShowFileExtensions)
             {
                 selectedTextLength -= extensionLength;
             }
@@ -383,10 +388,7 @@ namespace Files.Views.LayoutModes
                 if (!IsRenamingItem && !ParentShellPageInstance.NavToolbarViewModel.IsEditModeEnabled)
                 {
                     e.Handled = true;
-                    if (MainViewModel.IsQuickLookEnabled)
-                    {
-                        await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance);
-                    }
+                    await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance);
                 }
             }
             else if (e.KeyStatus.IsMenuKeyDown && (e.Key == VirtualKey.Left || e.Key == VirtualKey.Right || e.Key == VirtualKey.Up))
@@ -486,11 +488,15 @@ namespace Files.Views.LayoutModes
             }
         }
 
-        private async void FileList_ItemTapped(object sender, TappedRoutedEventArgs e)
+        private void FileList_ItemTapped(object sender, TappedRoutedEventArgs e)
         {
             var ctrlPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
             var shiftPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-
+            var item = (e.OriginalSource as FrameworkElement)?.DataContext as ListedItem;
+            if (item == null)
+            {
+                return;
+            }
             // Skip code if the control or shift key is pressed or if the user is using multiselect
             if (ctrlPressed || shiftPressed || MainViewModel.MultiselectEnabled)
             {
@@ -498,23 +504,22 @@ namespace Files.Views.LayoutModes
             }
 
             // Check if the setting to open items with a single click is turned on
-            if (AppSettings.OpenItemsWithOneclick)
+            if (item != null
+                && ((UserSettingsService.PreferencesSettingsService.OpenFoldersWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.Folder) || (UserSettingsService.PreferencesSettingsService.OpenFilesWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.File)))
             {
                 ResetRenameDoubleClick();
-                await Task.Delay(200); // The delay gives time for the item to be selected
                 NavigationHelpers.OpenSelectedItems(ParentShellPageInstance, false);
             }
             else
             {
                 var clickedItem = e.OriginalSource as FrameworkElement;
-                if (clickedItem is TextBlock && ((TextBlock)clickedItem).Name == "ItemName")
+                if (clickedItem is TextBlock textBlock && textBlock.Name == "ItemName")
                 {
                     CheckRenameDoubleClick(clickedItem?.DataContext);
                 }
                 else if (IsRenamingItem)
                 {
-                    GridViewItem gridViewItem = FileList.ContainerFromItem(RenamingItem) as GridViewItem;
-                    if (gridViewItem != null)
+                    if (FileList.ContainerFromItem(RenamingItem) is GridViewItem gridViewItem)
                     {
                         if (FolderSettings.LayoutMode == FolderLayoutModes.GridView)
                         {
@@ -535,7 +540,9 @@ namespace Files.Views.LayoutModes
         private void FileList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             // Skip opening selected items if the double tap doesn't capture an item
-            if ((e.OriginalSource as FrameworkElement)?.DataContext is ListedItem && !AppSettings.OpenItemsWithOneclick)
+            if ((e.OriginalSource as FrameworkElement)?.DataContext is ListedItem item
+                 && ((!UserSettingsService.PreferencesSettingsService.OpenFilesWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.File)
+                 || (!UserSettingsService.PreferencesSettingsService.OpenFoldersWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.Folder)))
             {
                 if (!MainViewModel.MultiselectEnabled)
                 {

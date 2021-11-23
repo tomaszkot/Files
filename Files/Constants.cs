@@ -15,6 +15,15 @@
             public const float ExtraSmallThreshold = 15.0f;
         }
 
+        public static class CommonPaths
+        {
+            public const string RecycleBinPath = @"Shell:RecycleBinFolder";
+
+            public const string NetworkFolderPath = @"Shell:NetworkPlacesFolder";
+
+            public const string MyComputerPath = @"Shell:MyComputerFolder";
+        }
+
         public static class ImageRes
         {
             // See imageres.dll for more icon indexes to add
@@ -53,6 +62,12 @@
             public const double MinimumSidebarWidth = 250;
 
             public const double MaximumSidebarWidth = 500;
+
+            public const double ContextMenuMaxHeight = 480; // For contextmenu hacks, must match WinUI style
+            public const double ContextMenuSecondaryItemsHeight = 32; // For contextmenu hacks, must match WinUI style
+            public const double ContextMenuPrimaryItemsHeight = 48; // For contextmenu hacks, must match WinUI style
+            public const double ContextMenuLabelMargin = 10; // For contextmenu hacks
+            public const double ContextMenuItemsMaxWidth = 250; // For contextmenu hacks
         }
 
         public static class Browser
@@ -106,6 +121,8 @@
 
             public const string BundlesSettingsFileName = "bundles.json";
 
+            public const string UserSettingsFileName = "user_settings.json";
+
             public const string FileTagSettingsFileName = "filetags.json";
         }
 
@@ -115,7 +132,7 @@
             /// The maximum number of characters that should be loaded into the preview.
             /// Enforcing this limit ensures that attempting to open an absurdly large file will not cause Files to freeze.
             /// </summary>
-            public const int TextCharacterLimit = 50000;
+            public const int TextCharacterLimit = 10000;
 
             /// <summary>
             /// The maximum number of pages loaded into the PDF preview.
@@ -125,7 +142,7 @@
             /// <summary>
             /// The maximum file size, in bytes, that will attempted to be loaded as text if the extension is unknown.
             /// </summary>
-            public const long TryLoadAsTextSizeLimit = 1000000;
+            public const long TryLoadAsTextSizeLimit = 500000;
 
             /// <summary>
             /// The number of thumbnails that will be shown for FolderPreviews
@@ -149,6 +166,13 @@
         public static class OptionalPackages
         {
             public const string ThemesOptionalPackagesName = "49306atecsolution.ThemesforFiles";
+        }
+
+        public static class Filesystem
+        {
+            public const int ExtendedAsciiCodePage = 437;
+
+            public const string CachedEmptyItemName = "fileicon_cache";
         }
     }
 }

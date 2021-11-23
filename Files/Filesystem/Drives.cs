@@ -1,7 +1,13 @@
 using Files.Common;
 using Files.DataModels.NavigationControlItems;
 using Files.Enums;
+using Files.Helpers;
+using Files.Services;
+using Files.UserControls;
+using Files.UserControls.Widgets;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
+using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,6 +23,8 @@ namespace Files.Filesystem
 {
     public class DrivesManager : ObservableObject
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         private static readonly Logger Logger = App.Logger;
         private readonly List<DriveItem> drivesList = new List<DriveItem>();
 
@@ -56,8 +64,10 @@ namespace Files.Filesystem
 
             if (await GetDrivesAsync())
             {
-                if (!Drives.Any(d => d.Type != DriveType.Removable))
+                if (!Drives.Any(d => d.Type != DriveType.Removable && d.Path == "C:\\"))
                 {
+                    // Show consent dialog if the exception is UnauthorizedAccessException
+                    // and the C: drive could not be accessed
                     ShowUserConsentOnInit = true;
                 }
             }
@@ -205,7 +215,7 @@ namespace Files.Filesystem
 
         public async void UpdateDrivesSectionVisibility()
         {
-            if (App.AppSettings.ShowDrivesSection)
+            if (UserSettingsService.AppearanceSettingsService.ShowDrivesSection)
             {
                 await EnumerateDrivesAsync();
             }

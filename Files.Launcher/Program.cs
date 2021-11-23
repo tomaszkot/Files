@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -66,6 +65,9 @@ namespace FilesFullTrust
 
                 // Wait until the connection gets closed
                 appServiceExit.WaitOne();
+
+                // Wait for ongoing file operations
+                messageHandlers.OfType<FileOperationsHandler>().Single().WaitForCompletion();
             }
             finally
             {
@@ -82,32 +84,24 @@ namespace FilesFullTrust
             Logger.UnhandledError(exception, exception.Message);
         }
 
-        private static NamedPipeServerStream connection;
+        private static NamedPipeClientStream connection;
         private static ManualResetEvent appServiceExit;
         private static DeviceWatcher deviceWatcher;
         private static List<IMessageHandler> messageHandlers;
 
         private static async void InitializeAppServiceConnection()
         {
-            connection = new NamedPipeServerStream($@"FilesInteropService_ServerPipe", PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Message, PipeOptions.Asynchronous, 2048, 2048, null, HandleInheritability.None, PipeAccessRights.ChangePermissions);
-
-            PipeSecurity Security = connection.GetAccessControl();
-            PipeAccessRule ClientRule = new PipeAccessRule(new SecurityIdentifier("S-1-15-2-1"), PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance, AccessControlType.Allow);
-            PipeAccessRule OwnerRule = new PipeAccessRule(WindowsIdentity.GetCurrent().Owner, PipeAccessRights.FullControl, AccessControlType.Allow);
-            Security.AddAccessRule(ClientRule);
-            Security.AddAccessRule(OwnerRule);
-            if (IsAdministrator())
-            {
-                PipeAccessRule EveryoneRule = new PipeAccessRule(new SecurityIdentifier("S-1-1-0"), PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance, AccessControlType.Allow);
-                Security.AddAccessRule(EveryoneRule); // TODO: find the minimum permission to allow connection when admin
-            }
-            connection.SetAccessControl(Security);
+            var packageSid = ApplicationData.Current.LocalSettings.Values["PackageSid"];
+            connection = new NamedPipeClientStream(".",
+                $"Sessions\\{Process.GetCurrentProcess().SessionId}\\AppContainerNamedObjects\\{packageSid}\\FilesInteropService_ServerPipe",
+                PipeDirection.InOut, PipeOptions.Asynchronous);
 
             try
             {
                 using var cts = new CancellationTokenSource();
-                cts.CancelAfter(TimeSpan.FromSeconds(10));
-                await connection.WaitForConnectionAsync(cts.Token);
+                cts.CancelAfter(TimeSpan.FromSeconds(15));
+                await connection.ConnectAsync(cts.Token);
+                connection.ReadMode = PipeTransmissionMode.Message;
             }
             catch (Exception ex)
             {
@@ -147,30 +141,36 @@ namespace FilesFullTrust
 
         private static void EndReadCallBack(IAsyncResult result)
         {
-            var info = ((byte[] Buffer, StringBuilder Message))result.AsyncState;
             var readBytes = connection.EndRead(result);
             if (readBytes > 0)
             {
+                var info = ((byte[] Buffer, StringBuilder Message))result.AsyncState;
+
                 // Get the read bytes and append them
                 info.Message.Append(Encoding.UTF8.GetString(info.Buffer, 0, readBytes));
 
-                if (connection.IsMessageComplete) // Message is completed
+                if (!connection.IsMessageComplete) // Message is not complete, continue reading
+                {
+                    BeginRead(info);
+                }
+                else
                 {
                     var message = info.Message.ToString().TrimEnd('\0');
 
-                    Connection_RequestReceived(connection, JsonConvert.DeserializeObject<Dictionary<string, object>>(message));
+                    OnConnectionRequestReceived(connection, JsonConvert.DeserializeObject<Dictionary<string, object>>(message));
 
                     // Begin a new reading operation
                     var nextInfo = (Buffer: new byte[connection.InBufferSize], Message: new StringBuilder());
                     BeginRead(nextInfo);
-
-                    return;
                 }
             }
-            BeginRead(info);
+            else // Disconnected
+            {
+                appServiceExit.Set();
+            }
         }
 
-        private static async void Connection_RequestReceived(NamedPipeServerStream conn, Dictionary<string, object> message)
+        private static async void OnConnectionRequestReceived(PipeStream conn, Dictionary<string, object> message)
         {
             // Get a deferral because we use an awaitable API below to respond to the message
             // and we don't want this call to get cancelled while we are waiting.
@@ -187,7 +187,10 @@ namespace FilesFullTrust
                 var arguments = (string)message["Arguments"];
                 Logger.Info($"Argument: {arguments}");
 
-                await ParseArgumentsAsync(message, arguments);
+                await Extensions.IgnoreExceptions(async () =>
+                {
+                    await Task.Run(() => ParseArgumentsAsync(message, arguments));
+                }, Logger);
             }
         }
 
@@ -253,15 +256,28 @@ namespace FilesFullTrust
             {
                 localSettings.Values.Remove("Arguments");
 
-                if (arguments == "ShellCommand")
+                if (arguments == "StartUwp")
                 {
-                    // Kill the process. This is a BRUTAL WAY to kill a process.
-#if DEBUG
-                    // In debug mode this kills this process too??
-#else
-                    var pid = (int)localSettings.Values["pid"];
-                    Process.GetProcessById(pid).Kill();
-#endif
+                    var folder = localSettings.Values.Get("Folder", "");
+                    localSettings.Values.Remove("Folder");
+
+                    using Process process = new Process();
+                    process.StartInfo.UseShellExecute = true;
+                    process.StartInfo.FileName = "files.exe";
+                    process.StartInfo.Arguments = folder;
+                    process.Start();
+
+                    TerminateProcess((int)localSettings.Values["pid"]);
+                    return true;
+                }
+                else if (arguments == "TerminateUwp")
+                {
+                    TerminateProcess((int)localSettings.Values["pid"]);
+                    return true;
+                }
+                else if (arguments == "ShellCommand")
+                {
+                    TerminateProcess((int)localSettings.Values["pid"]);
 
                     using Process process = new Process();
                     process.StartInfo.UseShellExecute = true;
@@ -274,6 +290,16 @@ namespace FilesFullTrust
                 }
             }
             return false;
+        }
+
+        private static void TerminateProcess(int processId)
+        {
+            // Kill the process. This is a BRUTAL WAY to kill a process.
+#if DEBUG
+            // In debug mode this kills this process too??
+#else
+            Process.GetProcessById(processId).Kill();
+#endif
         }
     }
 }

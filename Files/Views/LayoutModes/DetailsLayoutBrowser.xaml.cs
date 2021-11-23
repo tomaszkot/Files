@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.Storage;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -22,6 +23,8 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+
+using SortDirection = Files.Enums.SortDirection;
 
 namespace Files.Views.LayoutModes
 {
@@ -43,6 +46,8 @@ namespace Files.Views.LayoutModes
         }
 
         private RelayCommand<string> UpdateSortOptionsCommand { get; set; }
+
+        public ScrollViewer ContentScroller { get; private set; }
 
         public DetailsLayoutBrowser() : base()
         {
@@ -70,6 +75,7 @@ namespace Files.Views.LayoutModes
         private void ItemManipulationModel_ScrollIntoViewInvoked(object sender, ListedItem e)
         {
             FileList.ScrollIntoView(e);
+            ContentScroller?.ChangeView(null, FileList.Items.IndexOf(e) * 36, null, true); // Scroll to index * item height
         }
 
         private void ItemManipulationModel_StartRenameItemInvoked(object sender, EventArgs e)
@@ -282,7 +288,7 @@ namespace Files.Views.LayoutModes
                 ColumnsViewModel.StatusColumn.Show();
             }
 
-            if (!App.AppSettings.AreFileTagsEnabled)
+            if (!UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled)
             {
                 ColumnsViewModel.TagColumn.Hide();
             }
@@ -324,9 +330,13 @@ namespace Files.Views.LayoutModes
             }
         }
 
-        private void FileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void FileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SelectedItems = FileList.SelectedItems.Cast<ListedItem>().Where(x => x != null).ToList();
+            if (SelectedItems.Count == 1)
+            {
+                await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance, true);
+            }
         }
 
         override public void StartRenameItem()
@@ -357,7 +367,7 @@ namespace Files.Views.LayoutModes
             textBox.KeyDown += RenameTextBox_KeyDown;
 
             int selectedTextLength = SelectedItem.ItemName.Length;
-            if (!SelectedItem.IsShortcutItem && App.AppSettings.ShowFileExtensions)
+            if (!SelectedItem.IsShortcutItem && UserSettingsService.PreferencesSettingsService.ShowFileExtensions)
             {
                 selectedTextLength -= extensionLength;
             }
@@ -465,10 +475,7 @@ namespace Files.Views.LayoutModes
                 if (!IsRenamingItem && !ParentShellPageInstance.NavToolbarViewModel.IsEditModeEnabled)
                 {
                     e.Handled = true;
-                    if (MainViewModel.IsQuickLookEnabled)
-                    {
-                        await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance);
-                    }
+                    await QuickLookHelpers.ToggleQuickLook(ParentShellPageInstance);
                 }
             }
             else if (e.KeyStatus.IsMenuKeyDown && (e.Key == VirtualKey.Left || e.Key == VirtualKey.Right || e.Key == VirtualKey.Up))
@@ -567,11 +574,15 @@ namespace Files.Views.LayoutModes
             }
         }
 
-        private async void FileList_ItemTapped(object sender, TappedRoutedEventArgs e)
+        private void FileList_ItemTapped(object sender, TappedRoutedEventArgs e)
         {
             var ctrlPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
             var shiftPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-
+            var item = (e.OriginalSource as FrameworkElement)?.DataContext as ListedItem;
+            if (item == null)
+            {
+                return;
+            }
             // Skip code if the control or shift key is pressed or if the user is using multiselect
             if (ctrlPressed || shiftPressed || MainViewModel.MultiselectEnabled)
             {
@@ -579,10 +590,10 @@ namespace Files.Views.LayoutModes
             }
 
             // Check if the setting to open items with a single click is turned on
-            if (AppSettings.OpenItemsWithOneclick)
+            if (item != null
+                && ((UserSettingsService.PreferencesSettingsService.OpenFoldersWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.Folder) || (UserSettingsService.PreferencesSettingsService.OpenFilesWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.File)))
             {
                 ResetRenameDoubleClick();
-                await Task.Delay(200); // The delay gives time for the item to be selected
                 NavigationHelpers.OpenSelectedItems(ParentShellPageInstance, false);
             }
             else
@@ -607,7 +618,9 @@ namespace Files.Views.LayoutModes
         private void FileList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             // Skip opening selected items if the double tap doesn't capture an item
-            if ((e.OriginalSource as FrameworkElement)?.DataContext is ListedItem && !AppSettings.OpenItemsWithOneclick)
+            if ((e.OriginalSource as FrameworkElement)?.DataContext is ListedItem item
+                 && ((!UserSettingsService.PreferencesSettingsService.OpenFilesWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.File) 
+                 || (!UserSettingsService.PreferencesSettingsService.OpenFoldersWithOneClick && item.PrimaryItemAttribute == StorageItemTypes.Folder)))
             {
                 if (!MainViewModel.MultiselectEnabled)
                 {
@@ -657,11 +670,11 @@ namespace Files.Views.LayoutModes
             ColumnsViewModel.TagColumn.UserLength = new GridLength(Column3.ActualWidth, GridUnitType.Pixel);
             ColumnsViewModel.OriginalPathColumn.UserLength = new GridLength(Column4.ActualWidth, GridUnitType.Pixel);
             ColumnsViewModel.DateDeletedColumn.UserLength = new GridLength(Column5.ActualWidth, GridUnitType.Pixel);
-            ColumnsViewModel.StatusColumn.UserLength = new GridLength(Column6.ActualWidth, GridUnitType.Pixel);
-            ColumnsViewModel.DateModifiedColumn.UserLength = new GridLength(Column7.ActualWidth, GridUnitType.Pixel);
-            ColumnsViewModel.DateCreatedColumn.UserLength = new GridLength(Column8.ActualWidth, GridUnitType.Pixel);
-            ColumnsViewModel.ItemTypeColumn.UserLength = new GridLength(Column9.ActualWidth, GridUnitType.Pixel);
-            ColumnsViewModel.SizeColumn.UserLength = new GridLength(Column10.ActualWidth, GridUnitType.Pixel);
+            ColumnsViewModel.DateModifiedColumn.UserLength = new GridLength(Column6.ActualWidth, GridUnitType.Pixel);
+            ColumnsViewModel.DateCreatedColumn.UserLength = new GridLength(Column7.ActualWidth, GridUnitType.Pixel);
+            ColumnsViewModel.ItemTypeColumn.UserLength = new GridLength(Column8.ActualWidth, GridUnitType.Pixel);
+            ColumnsViewModel.SizeColumn.UserLength = new GridLength(Column9.ActualWidth, GridUnitType.Pixel);
+            ColumnsViewModel.StatusColumn.UserLength = new GridLength(Column10.ActualWidth, GridUnitType.Pixel);
         }
 
         private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -726,13 +739,13 @@ namespace Files.Views.LayoutModes
                 2 => FileList.Items.Cast<ListedItem>().Select(x => x.FileTagUI?.TagName?.Length ?? 0).Max(), // file tag column
                 3 => FileList.Items.Cast<RecycleBinItem>().Select(x => x.ItemOriginalPath?.Length ?? 0).Max(), // original path column
                 4 => FileList.Items.Cast<RecycleBinItem>().Select(x => x.ItemDateDeleted?.Length ?? 0).Max(), // date deleted column
-                5 => 20, // cloud status column
-                6 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemDateModified?.Length ?? 0).Max(), // date modified column
-                7 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemDateCreated?.Length ?? 0).Max(), // date created column
-                8 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemType?.Length ?? 0).Max(), // item type column
-                _ => FileList.Items.Cast<ListedItem>().Select(x => x.FileSize?.Length ?? 0).Max(), // item size column
+                5 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemDateModified?.Length ?? 0).Max(), // date modified column
+                6 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemDateCreated?.Length ?? 0).Max(), // date created column
+                7 => FileList.Items.Cast<ListedItem>().Select(x => x.ItemType?.Length ?? 0).Max(), // item type column
+                8 => FileList.Items.Cast<ListedItem>().Select(x => x.FileSize?.Length ?? 0).Max(), // item size column
+                _ => 20 // cloud status column
             };
-            var colunmSizeToFit = new[] { 5 }.Contains(columnToResize) ? maxItemLength : MeasureTextColumn(columnToResize, 5, maxItemLength);
+            var colunmSizeToFit = new[] { 9 }.Contains(columnToResize) ? maxItemLength : MeasureTextColumn(columnToResize, 5, maxItemLength);
             if (colunmSizeToFit > 0)
             {
                 var column = columnToResize switch
@@ -741,15 +754,15 @@ namespace Files.Views.LayoutModes
                     2 => ColumnsViewModel.TagColumn,
                     3 => ColumnsViewModel.OriginalPathColumn,
                     4 => ColumnsViewModel.DateDeletedColumn,
-                    5 => ColumnsViewModel.StatusColumn,
-                    6 => ColumnsViewModel.DateModifiedColumn,
-                    7 => ColumnsViewModel.DateCreatedColumn,
-                    8 => ColumnsViewModel.ItemTypeColumn,
-                    _ => ColumnsViewModel.SizeColumn
+                    5 => ColumnsViewModel.DateModifiedColumn,
+                    6 => ColumnsViewModel.DateCreatedColumn,
+                    7 => ColumnsViewModel.ItemTypeColumn,
+                    8 => ColumnsViewModel.SizeColumn,
+                    _ => ColumnsViewModel.StatusColumn
                 };
                 if (columnToResize == 1)
                 {
-                    colunmSizeToFit += AppSettings.AreFileTagsEnabled ? 20 : 0;
+                    colunmSizeToFit += UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled ? 20 : 0;
                 }
                 column.UserLength = new GridLength(Math.Min(colunmSizeToFit + 30, column.NormalMaxLength), GridUnitType.Pixel);
             }
@@ -774,9 +787,9 @@ namespace Files.Views.LayoutModes
 
         private void FileList_Loaded(object sender, RoutedEventArgs e)
         {
-            var contentScroller = FileList.FindDescendant<ScrollViewer>(x => x.Name == "ScrollViewer");
-            contentScroller.ViewChanged -= ContentScroller_ViewChanged;
-            contentScroller.ViewChanged += ContentScroller_ViewChanged;
+            ContentScroller = FileList.FindDescendant<ScrollViewer>(x => x.Name == "ScrollViewer");
+            ContentScroller.ViewChanged -= ContentScroller_ViewChanged;
+            ContentScroller.ViewChanged += ContentScroller_ViewChanged;
         }
 
         private void ContentScroller_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)

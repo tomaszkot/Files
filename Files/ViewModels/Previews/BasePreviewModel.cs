@@ -1,8 +1,11 @@
 ﻿using Files.Filesystem;
 using Files.Filesystem.StorageItems;
 using Files.Helpers;
+using Files.Services;
 using Files.ViewModels.Properties;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
+using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.Storage.FileProperties;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media.Imaging;
@@ -18,6 +22,8 @@ namespace Files.ViewModels.Previews
 {
     public abstract class BasePreviewModel : ObservableObject
     {
+        protected IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public BasePreviewModel(ListedItem item) : base()
         {
             Item = item;
@@ -55,11 +61,11 @@ namespace Files.ViewModels.Previews
             iconData ??= await FileThumbnailHelper.LoadIconWithoutOverlayAsync(Item.ItemPath, 400);
             if (iconData != null)
             {
-                FileImage = await iconData.ToBitmapAsync();
+                await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(async () => FileImage = await iconData.ToBitmapAsync());
             }
             else
             {
-                FileImage ??= new BitmapImage();
+                FileImage ??= await CoreApplication.MainView.DispatcherQueue.EnqueueAsync(() => new BitmapImage());
             }
 
             return new List<FileProperty>();
@@ -86,7 +92,7 @@ namespace Files.ViewModels.Previews
                                                                                             (double?)list.Find(x => x.Property == "System.GPS.LongitudeDecimal").Value);
 
             // adds the value for the file tag
-            if (App.AppSettings.AreFileTagsEnabled)
+            if (UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled)
             {
                 list.FirstOrDefault(x => x.ID == "filetag").Value = Item.FileTagUI?.TagName;
             }
@@ -105,17 +111,22 @@ namespace Files.ViewModels.Previews
         /// <returns>The task to run</returns>
         public virtual async Task LoadAsync()
         {
-            var detailsFull = new List<FileProperty>();
+            List<FileProperty> detailsFull = new();
             Item.ItemFile ??= await StorageFileExtensions.DangerousGetFileFromPathAsync(Item.ItemPath);
-            DetailsFromPreview = await LoadPreviewAndDetails();
-
-            if (!App.AppSettings.ShowPreviewOnly)
+            await Task.Run(async () =>
             {
-                // Add the details from the preview function, then the system file properties
-                DetailsFromPreview?.ForEach(i => detailsFull.Add(i));
-                var props = await GetSystemFileProperties();
-                props?.ForEach(i => detailsFull.Add(i));
-            }
+                DetailsFromPreview = await LoadPreviewAndDetails();
+                if (!UserSettingsService.PreviewPaneSettingsService.ShowPreviewOnly)
+                {
+                    // Add the details from the preview function, then the system file properties
+                    DetailsFromPreview?.ForEach(i => detailsFull.Add(i));
+                    List<FileProperty> props = await GetSystemFileProperties();
+                    if(props is not null)
+                    {
+                        detailsFull.AddRange(props);
+                    }
+                }
+            });
 
             Item.FileDetails = new System.Collections.ObjectModel.ObservableCollection<FileProperty>(detailsFull);
         }

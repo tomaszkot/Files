@@ -1,10 +1,12 @@
 ﻿using Files.Filesystem;
 using Files.Helpers;
 using Files.Helpers.XamlHelpers;
+using Files.Services;
 using Files.ViewModels;
 using Files.DataModels.NavigationControlItems;
 using Files.ViewModels.Widgets;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Mvvm.Input;
 using Microsoft.Toolkit.Uwp;
 using System;
@@ -57,6 +59,8 @@ namespace Files.UserControls.Widgets
 
     public sealed partial class FolderWidget : UserControl, IWidgetItemModel, INotifyPropertyChanged
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public BulkConcurrentObservableCollection<LibraryCardItem> ItemsAdded = new BulkConcurrentObservableCollection<LibraryCardItem>();
         private bool showMultiPaneControls;
 
@@ -84,9 +88,7 @@ namespace Files.UserControls.Widgets
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public SettingsViewModel AppSettings => App.AppSettings;
-
-        public bool IsWidgetSettingEnabled => App.AppSettings.ShowFolderWidgetWidget;
+        public bool IsWidgetSettingEnabled => UserSettingsService.WidgetsSettingsService.ShowFoldersWidget;
 
         public RelayCommand<LibraryCardItem> LibraryCardClicked => new RelayCommand<LibraryCardItem>(async (item) =>
         {

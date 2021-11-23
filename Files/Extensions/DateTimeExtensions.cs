@@ -10,7 +10,7 @@ namespace Files.Extensions
         {
             var elapsed = DateTimeOffset.Now - d;
 
-            if (d.Year == 1601)
+            if (d.Year == 1601 || d.Year == 9999)
             {
                 return " ";
             }
@@ -82,12 +82,12 @@ namespace Files.Extensions
                 return ("ItemTimeText_Yesterday".GetLocalized(), today.Subtract(TimeSpan.FromDays(1)).ToUserDateString(), "\ue161", 1);
             }
 
-            if (diff.Days <= 7 && w.GetWeekOfYear() == t2.GetWeekOfYear() && w.Year == t2.Year)
+            if (diff.Days < 7 && w.GetWeekOfYear() == t2.GetWeekOfYear() && w.Year == t2.Year)
             {
                 return ("ItemTimeText_ThisWeek".GetLocalized(), t.Subtract(TimeSpan.FromDays((int)t.DayOfWeek)).ToUserDateString(), "\uE162", 2);
             }
 
-            if (diff.Days <= 14 && w.GetWeekOfYear() == t2.GetWeekOfYear() && w.Year == t2.Year)
+            if (diff.Days < 14 && w.GetWeekOfYear() == t2.GetWeekOfYear() && w.Year == t2.Year)
             {
                 return ("ItemTimeText_LastWeek".GetLocalized(), t.Subtract(TimeSpan.FromDays((int)t.DayOfWeek + 7)).Date.ToShortDateString(), "\uE162", 3);
             }

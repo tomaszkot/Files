@@ -1,7 +1,11 @@
-﻿using Files.ViewModels.Previews;
+﻿using System;
+using Files.Services;
+using Files.ViewModels.Previews;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -9,6 +13,8 @@ namespace Files.UserControls.FilePreviews
 {
     public sealed partial class MediaPreview : UserControl
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public MediaPreview(MediaPreviewViewModel model)
         {
             ViewModel = model;
@@ -20,15 +26,27 @@ namespace Files.UserControls.FilePreviews
 
         private void PlayerContext_Loaded(object sender, RoutedEventArgs e)
         {
-            PlayerContext.MediaPlayer.Volume = App.AppSettings.MediaVolume;
+            PlayerContext.MediaPlayer.Volume = UserSettingsService.PreviewPaneSettingsService.PreviewPaneMediaVolume;
             PlayerContext.MediaPlayer.VolumeChanged += MediaPlayer_VolumeChanged;
         }
 
         private void MediaPlayer_VolumeChanged(MediaPlayer sender, object args)
         {
-            if (sender.Volume != App.AppSettings.MediaVolume)
+            if (sender.Volume != UserSettingsService.PreviewPaneSettingsService.PreviewPaneMediaVolume)
             {
-                App.AppSettings.MediaVolume = sender.Volume;
+                UserSettingsService.PreviewPaneSettingsService.PreviewPaneMediaVolume = sender.Volume;
+            }
+        }
+
+        private void TogglePlaybackAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            if (PlayerContext.MediaPlayer.PlaybackSession.PlaybackState is not MediaPlaybackState.Playing)
+            {
+                PlayerContext.MediaPlayer.Play();
+            }
+            else
+            {
+                PlayerContext.MediaPlayer.Pause();
             }
         }
     }

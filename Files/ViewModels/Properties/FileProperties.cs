@@ -57,9 +57,6 @@ namespace Files.ViewModels.Properties
                     (Path.IsPathRooted(Item.ItemPath) ? Path.GetDirectoryName(Item.ItemPath) : Item.ItemPath);
                 ViewModel.ItemModifiedTimestamp = Item.ItemDateModified;
                 ViewModel.ItemCreatedTimestamp = Item.ItemDateCreated;
-                ViewModel.LoadFolderGlyph = Item.LoadFolderGlyph;
-                ViewModel.IconData = Item.CustomIconData;
-                ViewModel.LoadUnknownTypeGlyph = Item.LoadUnknownTypeGlyph;
                 ViewModel.LoadCustomIcon = Item.LoadCustomIcon;
                 ViewModel.CustomIconSource = Item.CustomIconSource;
                 ViewModel.LoadFileIcon = Item.LoadFileIcon;
@@ -406,7 +403,10 @@ namespace Files.ViewModels.Properties
                 {
                     break;
                 }
-                progress?.Report(isProgressSupported ? (float)stream.Position / stream.Length * 100.0f : 20);
+                if (stream.Length > 0)
+                {
+                    progress?.Report(isProgressSupported ? (float)stream.Position / stream.Length * 100.0f : 20);
+                }
             }
             inputStream.Dispose();
             stream.Dispose();

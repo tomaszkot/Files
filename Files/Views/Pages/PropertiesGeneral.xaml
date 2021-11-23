@@ -74,16 +74,20 @@
                     ItemSize="80"
                     ViewModel="{x:Bind ViewModel}" />
             </Grid>
+            <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
             <TextBox
                 x:Name="ItemFileName"
                 x:Uid="PropertiesItemFileName"
-                Grid.Row="0"
-                Grid.Column="1"
                 Style="{StaticResource PropertyValueTextBox}"
                 Text="{x:Bind ViewModel.ItemName, Mode=TwoWay}"
                 Visibility="{x:Bind ViewModel.ItemNameVisibility, Mode=OneWay}" />
-
-            <MenuFlyoutSeparator
+            <TextBlock
+                x:Name="itemFilesAndFoldersCountValueTop"
+                Style="{StaticResource PropertyValueTextBlock}"
+                Text="{x:Bind ViewModel.FilesAndFoldersCountString, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.FilesAndFoldersCountVisibility, Mode=OneWay}" />
+            </StackPanel>
+                <MenuFlyoutSeparator
                 Grid.Row="1"
                 Grid.Column="0"
                 Grid.ColumnSpan="2"
@@ -188,22 +192,6 @@
                 VerticalAlignment="Center"
                 ShowError="{x:Bind ViewModel.ItemMD5HashCalcError, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.ItemMD5HashProgressVisibility, Mode=OneWay}" />
-
-            <TextBlock
-                x:Name="PropertiesCount"
-                x:Uid="PropertiesFilesAndFoldersCount"
-                Grid.Row="7"
-                Grid.Column="0"
-                Style="{StaticResource PropertyName}"
-                Text="Contains:"
-                Visibility="{x:Bind ViewModel.FilesAndFoldersCountVisibility, Mode=OneWay}" />
-            <TextBlock
-                x:Name="itemFilesAndFoldersCountValue"
-                Grid.Row="7"
-                Grid.Column="1"
-                Style="{StaticResource PropertyValueTextBlock}"
-                Text="{x:Bind ViewModel.FilesAndFoldersCountString, Mode=OneWay}"
-                Visibility="{x:Bind ViewModel.FilesAndFoldersCountVisibility, Mode=OneWay}" />
 
             <MenuFlyoutSeparator
                 Grid.Row="8"

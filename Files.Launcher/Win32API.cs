@@ -36,7 +36,7 @@ namespace FilesFullTrust
                 catch (Exception ex)
                 {
                     tcs.SetResult(default);
-                    Program.Logger.Info(ex, ex.Message);
+                    Program.Logger.Warn(ex, ex.Message);
                     //tcs.SetException(e);
                 }
                 finally
@@ -83,24 +83,39 @@ namespace FilesFullTrust
             return tcs.Task;
         }
 
-        public static async Task<string> GetFileAssociationAsync(string filename)
+        public static async Task<string> GetFileAssociationAsync(string filename, bool checkDesktopFirst = false)
         {
             // Find UWP apps
-            var uwpApps = await Launcher.FindFileHandlersAsync(Path.GetExtension(filename));
-            if (uwpApps.Any())
+            async Task<string> GetUwpAssoc()
             {
-                return uwpApps.First().PackageFamilyName;
+                var uwpApps = await Launcher.FindFileHandlersAsync(Path.GetExtension(filename));
+                if (uwpApps.Any())
+                {
+                    return uwpApps.First().PackageFamilyName;
+                }
+                return null;
             }
 
             // Find desktop apps
-            var lpResult = new StringBuilder(2048);
-            var hResult = Shell32.FindExecutable(filename, null, lpResult);
-            if (hResult.ToInt64() > 32)
+            string GetDesktopAssoc()
             {
-                return lpResult.ToString();
+                var lpResult = new StringBuilder(2048);
+                var hResult = Shell32.FindExecutable(filename, null, lpResult);
+                if (hResult.ToInt64() > 32)
+                {
+                    return lpResult.ToString();
+                }
+                return null;
             }
 
-            return null;
+            if (checkDesktopFirst)
+            {
+                return GetDesktopAssoc() ?? await GetUwpAssoc();
+            }
+            else
+            {
+                return await GetUwpAssoc() ?? GetDesktopAssoc();
+            }
         }
 
         public static string ExtractStringFromDLL(string file, int number)
@@ -142,6 +157,8 @@ namespace FilesFullTrust
             }
         }
 
+        private static object lockObject = new object();
+
         public static (string icon, string overlay) GetFileIconAndOverlay(string path, int thumbnailSize, bool getOverlay = true, bool onlyGetOverlay = false)
         {
             string iconStr = null, overlayStr = null;
@@ -182,24 +199,31 @@ namespace FilesFullTrust
                 }
 
                 User32.DestroyIcon(shfi.hIcon);
-                Shell32.SHGetImageList(Shell32.SHIL.SHIL_LARGE, typeof(ComCtl32.IImageList).GUID, out var tmp);
-                using var imageList = ComCtl32.SafeHIMAGELIST.FromIImageList(tmp);
-                if (imageList.IsNull || imageList.IsInvalid)
-                {
-                    return (iconStr, null);
-                }
 
-                var overlayIdx = shfi.iIcon >> 24;
-                if (overlayIdx != 0)
+                lock (lockObject)
                 {
-                    var overlayImage = imageList.Interface.GetOverlayImage(overlayIdx);
-                    using var hOverlay = imageList.Interface.GetIcon(overlayImage, ComCtl32.IMAGELISTDRAWFLAGS.ILD_TRANSPARENT);
-                    if (!hOverlay.IsNull && !hOverlay.IsInvalid)
+                    if (!Shell32.SHGetImageList(Shell32.SHIL.SHIL_LARGE, typeof(ComCtl32.IImageList).GUID, out var imageList).Succeeded)
                     {
-                        using var image = hOverlay.ToIcon().ToBitmap();
-                        byte[] bitmapData = (byte[])new ImageConverter().ConvertTo(image, typeof(byte[]));
-                        overlayStr = Convert.ToBase64String(bitmapData, 0, bitmapData.Length);
+                        return (iconStr, null);
                     }
+
+                    var overlayIdx = shfi.iIcon >> 24;
+                    if (overlayIdx != 0)
+                    {
+                        var overlayImage = imageList.GetOverlayImage(overlayIdx);
+                        using var hOverlay = imageList.GetIcon(overlayImage, ComCtl32.IMAGELISTDRAWFLAGS.ILD_TRANSPARENT);
+                        if (!hOverlay.IsNull && !hOverlay.IsInvalid)
+                        {
+                            using (var icon = hOverlay.ToIcon())
+                            using (var image = icon.ToBitmap())
+                            {
+                                byte[] bitmapData = (byte[])new ImageConverter().ConvertTo(image, typeof(byte[]));
+                                overlayStr = Convert.ToBase64String(bitmapData, 0, bitmapData.Length);
+                            }
+                        }
+                    }
+
+                    Marshal.ReleaseComObject(imageList);
                 }
 
                 return (iconStr, overlayStr);
@@ -259,6 +283,59 @@ namespace FilesFullTrust
             return iconsList;
         }
 
+        public static IList<IconFileInfo> ExtractIconsFromDLL(string file)
+        {
+            var iconsList = new List<IconFileInfo>();
+            var currentProc = Process.GetCurrentProcess();
+            using var icoCnt = Shell32.ExtractIcon(currentProc.Handle, file, -1);
+            if (icoCnt == null)
+            {
+                return null;
+            }
+            int count = icoCnt.DangerousGetHandle().ToInt32();
+            int maxIndex = count - 1;
+            if (maxIndex == 0)
+            {
+                using (var icon = Shell32.ExtractIcon(currentProc.Handle, file, 0))
+                {
+                    using var image = icon.ToBitmap();
+                    byte[] bitmapData = (byte[])new ImageConverter().ConvertTo(image, typeof(byte[]));
+                    var icoStr = Convert.ToBase64String(bitmapData, 0, bitmapData.Length);
+                    iconsList.Add(new IconFileInfo(icoStr, 0));
+                }
+            }
+            else if (maxIndex > 0)
+            {
+                for (int i = 0; i <= maxIndex; i++)
+                {
+                    using (var icon = Shell32.ExtractIcon(currentProc.Handle, file, i))
+                    {
+                        using var image = icon.ToBitmap();
+                        byte[] bitmapData = (byte[])new ImageConverter().ConvertTo(image, typeof(byte[]));
+                        var icoStr = Convert.ToBase64String(bitmapData, 0, bitmapData.Length);
+                        iconsList.Add(new IconFileInfo(icoStr, i));
+                    }
+                }
+            }
+            else
+            {
+                return null;
+            }
+            return iconsList;
+        }
+
+        public static bool SetCustomDirectoryIcon(string folderPath, string iconFile, int iconIndex = 0)
+        {
+            var fcs = new Shell32.SHFOLDERCUSTOMSETTINGS();
+            fcs.dwSize = (uint)Marshal.SizeOf(fcs);
+            fcs.dwMask = Shell32.FOLDERCUSTOMSETTINGSMASK.FCSM_ICONFILE;
+            fcs.pszIconFile = iconFile;
+            fcs.cchIconFile = 0;
+            fcs.iIconIndex = iconIndex;
+
+            return Shell32.SHGetSetFolderCustomSettings(ref fcs, folderPath, Shell32.FCS.FCS_FORCEWRITE).Succeeded;
+        }
+
         public static void UnlockBitlockerDrive(string drive, string password)
         {
             RunPowershellCommand($"-command \"$SecureString = ConvertTo-SecureString '{password}' -AsPlainText -Force; Unlock-BitLocker -MountPoint '{drive}' -Password $SecureString\"", true);
@@ -312,6 +389,13 @@ namespace FilesFullTrust
             }
         }
 
+        public static Shell32.ITaskbarList4 CreateTaskbarObject()
+        {
+            var taskbar2 = new Shell32.ITaskbarList2();
+            taskbar2.HrInit();
+            return taskbar2 as Shell32.ITaskbarList4;
+        }
+
         private static Bitmap GetAlphaBitmapFromBitmapData(BitmapData bmpData)
         {
             using var tmp = new Bitmap(bmpData.Width, bmpData.Height, bmpData.Stride, PixelFormat.Format32bppArgb, bmpData.Scan0);
@@ -342,12 +426,15 @@ namespace FilesFullTrust
             return false;
         }
 
-        public static async Task SendMessageAsync(NamedPipeServerStream pipe, ValueSet valueSet, string requestID = null)
+        public static async Task SendMessageAsync(PipeStream pipe, ValueSet valueSet, string requestID = null)
         {
-            var message = new Dictionary<string, object>(valueSet);
-            message.Add("RequestID", requestID);
-            var serialized = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
-            await pipe.WriteAsync(serialized, 0, serialized.Length);
+            await Extensions.IgnoreExceptions(async () =>
+            {
+                var message = new Dictionary<string, object>(valueSet);
+                message.Add("RequestID", requestID);
+                var serialized = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+                await pipe.WriteAsync(serialized, 0, serialized.Length);
+            });
         }
 
         // There is usually no need to define Win32 COM interfaces/P-Invoke methods here.

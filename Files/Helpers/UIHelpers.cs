@@ -1,7 +1,6 @@
 ﻿using Files.Common;
-using Files.DataModels;
-using Files.Extensions;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,13 +15,32 @@ namespace Files.Helpers
 {
     public static class UIHelpers
     {
-        public static bool IsAnyContentDialogOpen()
+        public static async Task<ContentDialogResult> TryShowAsync(this ContentDialog dialog)
         {
-            var openedPopups = VisualTreeHelper.GetOpenPopups(Window.Current);
-            return openedPopups.Any(popup => popup.Child is ContentDialog);
+            try
+            {
+                return await dialog.ShowAsync();
+            }
+            catch // A content dialog is already open
+            {
+                return ContentDialogResult.None;
+            }
         }
 
-        public static async Task<IList<IconFileInfo>> LoadSelectedIconsAsync(string filePath, IList<int> indexes, int iconSize = 48, bool rawDataOnly = true)
+        public static void CloseAllDialogs()
+        {
+            var openedDialogs = VisualTreeHelper.GetOpenPopups(Window.Current);
+
+            foreach (var item in openedDialogs)
+            {
+                if (item.Child is ContentDialog dialog)
+                {
+                    dialog.Hide();
+                }
+            }
+        }
+
+        private static async Task<IList<IconFileInfo>> LoadSelectedIconsAsync(string filePath, IList<int> indexes, int iconSize = 48)
         {
             var connection = await AppServiceConnectionHelper.Instance;
             if (connection != null)
@@ -38,12 +56,11 @@ namespace Files.Helpers
                 if (status == AppServiceResponseStatus.Success)
                 {
                     var icons = JsonConvert.DeserializeObject<IList<IconFileInfo>>((string)response["IconInfos"]);
-
-                    if (icons != null && !rawDataOnly)
+                    if (icons != null)
                     {
                         foreach (IconFileInfo iFInfo in icons)
                         {
-                            await iFInfo.LoadImageFromModelString();
+                            iFInfo.IconDataBytes = Convert.FromBase64String(iFInfo.IconData);
                         }
                     }
 
@@ -53,15 +70,60 @@ namespace Files.Helpers
             return null;
         }
 
-        public static BitmapImage GetImageForIconOrNull(object image)
+        private static Task<IEnumerable<IconFileInfo>> IconResources = UIHelpers.LoadSidebarIconResources();
+
+        public static async Task<IconFileInfo> GetIconResourceInfo(int index)
         {
-            if (SidebarPinnedModel.IconResources is null)
+            var icons = await UIHelpers.IconResources;
+            if (icons != null)
             {
-                return null;
+                return icons.FirstOrDefault(x => x.Index == index);
+            }
+            return null;
+        }
+
+        public static async Task<BitmapImage> GetIconResource(int index)
+        {
+            var iconInfo = await GetIconResourceInfo(index);
+            if (iconInfo != null)
+            {
+                return await iconInfo.IconDataBytes.ToBitmapAsync();
+            }
+            return null;
+        }
+
+        private static async Task<IEnumerable<IconFileInfo>> LoadSidebarIconResources()
+        {
+            const string imageres = @"C:\Windows\System32\imageres.dll";
+            var imageResList = await UIHelpers.LoadSelectedIconsAsync(imageres, new List<int>() {
+                    Constants.ImageRes.RecycleBin,
+                    Constants.ImageRes.NetworkDrives,
+                    Constants.ImageRes.Libraries,
+                    Constants.ImageRes.ThisPC,
+                    Constants.ImageRes.CloudDrives,
+                    Constants.ImageRes.Folder
+                }, 32);
+
+            const string shell32 = @"C:\Windows\System32\shell32.dll";
+            var shell32List = await UIHelpers.LoadSelectedIconsAsync(shell32, new List<int>() {
+                    Constants.Shell32.QuickAccess
+                }, 32);
+
+            if (shell32List != null && imageResList != null)
+            {
+                return imageResList.Concat(shell32List);
+            }
+            else if (shell32List != null && imageResList == null)
+            {
+                return shell32List;
+            }
+            else if (shell32List == null && imageResList != null)
+            {
+                return imageResList;
             }
             else
             {
-                return (BitmapImage)image;
+                return null;
             }
         }
     }

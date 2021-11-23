@@ -1,13 +1,16 @@
 ﻿using Common;
 using Files.Common;
 using FilesFullTrust.Helpers;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Vanara.PInvoke;
 using Vanara.Windows.Shell;
@@ -18,22 +21,17 @@ namespace FilesFullTrust.MessageHandlers
 {
     public class FileOperationsHandler : IMessageHandler
     {
-        private DisposableDictionary handleTable;
         private FileTagsDb dbInstance;
+        private ProgressHandler progressHandler;
 
-        public FileOperationsHandler()
-        {
-            // Create handle table to store context menu references
-            handleTable = new DisposableDictionary();
-        }
-
-        public void Initialize(NamedPipeServerStream connection)
+        public void Initialize(PipeStream connection)
         {
             string fileTagsDbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "filetags.db");
             dbInstance = new FileTagsDb(fileTagsDbPath, true);
+            progressHandler = new ProgressHandler(connection);
         }
 
-        public async Task ParseArgumentsAsync(NamedPipeServerStream connection, Dictionary<string, object> message, string arguments)
+        public async Task ParseArgumentsAsync(PipeStream connection, Dictionary<string, object> message, string arguments)
         {
             switch (arguments)
             {
@@ -43,7 +41,7 @@ namespace FilesFullTrust.MessageHandlers
             }
         }
 
-        private async Task ParseFileOperationAsync(NamedPipeServerStream connection, Dictionary<string, object> message)
+        private async Task ParseFileOperationAsync(PipeStream connection, Dictionary<string, object> message)
         {
             switch (message.Get("fileop", ""))
             {
@@ -233,7 +231,9 @@ namespace FilesFullTrust.MessageHandlers
                                     op.QueueDeleteOperation(shi);
                                 }
 
-                                handleTable.SetValue(operationID, false);
+                                progressHandler.OwnerWindow = op.OwnerWindow;
+                                progressHandler.AddOperation(operationID);
+
                                 var deleteTcs = new TaskCompletionSource<bool>();
                                 op.PreDeleteItem += (s, e) =>
                                 {
@@ -254,16 +254,13 @@ namespace FilesFullTrust.MessageHandlers
                                 };
                                 op.PostDeleteItem += (s, e) => UpdateFileTageDb(s, e, "delete");
                                 op.FinishOperations += (s, e) => deleteTcs.TrySetResult(e.Result.Succeeded);
-                                op.UpdateProgress += async (s, e) => await Win32API.SendMessageAsync(connection, new ValueSet() {
-                                    { "Progress", e.ProgressPercentage },
-                                    { "OperationID", operationID }
-                                });
                                 op.UpdateProgress += (s, e) =>
                                 {
-                                    if (handleTable.GetValue<bool>(operationID))
+                                    if (progressHandler.CheckCanceled(operationID))
                                     {
                                         throw new Win32Exception(unchecked((int)0x80004005)); // E_FAIL, stops operation
                                     }
+                                    progressHandler.UpdateOperation(operationID, e.ProgressPercentage);
                                 };
 
                                 try
@@ -275,7 +272,7 @@ namespace FilesFullTrust.MessageHandlers
                                     deleteTcs.TrySetResult(false);
                                 }
 
-                                handleTable.RemoveValue(operationID);
+                                progressHandler.RemoveOperation(operationID);
 
                                 return (await deleteTcs.Task, shellOperationResult);
                             }
@@ -293,7 +290,7 @@ namespace FilesFullTrust.MessageHandlers
                         var newName = (string)message["newName"];
                         var operationID = (string)message["operationID"];
                         var overwriteOnRename = (bool)message["overwrite"];
-                        var (succcess, shellOperationResult) = await Win32API.StartSTATask(async () =>
+                        var (success, shellOperationResult) = await Win32API.StartSTATask(async () =>
                         {
                             using (var op = new ShellFileOperations())
                             {
@@ -306,7 +303,9 @@ namespace FilesFullTrust.MessageHandlers
                                 using var shi = new ShellItem(fileToRenamePath);
                                 op.QueueRenameOperation(shi, newName);
 
-                                handleTable.SetValue(operationID, false);
+                                progressHandler.OwnerWindow = op.OwnerWindow;
+                                progressHandler.AddOperation(operationID);
+
                                 var renameTcs = new TaskCompletionSource<bool>();
                                 op.PostRenameItem += (s, e) =>
                                 {
@@ -330,13 +329,13 @@ namespace FilesFullTrust.MessageHandlers
                                     renameTcs.TrySetResult(false);
                                 }
 
-                                handleTable.RemoveValue(operationID);
+                                progressHandler.RemoveOperation(operationID);
 
                                 return (await renameTcs.Task, shellOperationResult);
                             }
                         });
                         await Win32API.SendMessageAsync(connection, new ValueSet() {
-                            { "Success", succcess },
+                            { "Success", success },
                             { "Result", JsonConvert.SerializeObject(shellOperationResult) },
                         }, message.Get("RequestID", (string)null));
                     }
@@ -348,6 +347,7 @@ namespace FilesFullTrust.MessageHandlers
                         var moveDestination = ((string)message["destpath"]).Split('|');
                         var operationID = (string)message["operationID"];
                         var overwriteOnMove = (bool)message["overwrite"];
+                        var ownerHwnd = (long)message["HWND"];
                         var (success, shellOperationResult) = await Win32API.StartSTATask(async () =>
                         {
                             using (var op = new ShellFileOperations())
@@ -357,7 +357,7 @@ namespace FilesFullTrust.MessageHandlers
                                 op.Options = ShellFileOperations.OperationFlags.NoConfirmMkDir
                                             | ShellFileOperations.OperationFlags.Silent
                                             | ShellFileOperations.OperationFlags.NoErrorUI;
-
+                                op.OwnerWindow = Win32API.Win32Window.FromLong(ownerHwnd);
                                 op.Options |= !overwriteOnMove ? ShellFileOperations.OperationFlags.PreserveFileExtensions | ShellFileOperations.OperationFlags.RenameOnCollision
                                     : ShellFileOperations.OperationFlags.NoConfirmation;
 
@@ -370,7 +370,9 @@ namespace FilesFullTrust.MessageHandlers
                                     }
                                 }
 
-                                handleTable.SetValue(operationID, false);
+                                progressHandler.OwnerWindow = op.OwnerWindow;
+                                progressHandler.AddOperation(operationID);
+
                                 var moveTcs = new TaskCompletionSource<bool>();
                                 op.PostMoveItem += (s, e) =>
                                 {
@@ -384,16 +386,13 @@ namespace FilesFullTrust.MessageHandlers
                                 };
                                 op.PostMoveItem += (s, e) => UpdateFileTageDb(s, e, "move");
                                 op.FinishOperations += (s, e) => moveTcs.TrySetResult(e.Result.Succeeded);
-                                op.UpdateProgress += async (s, e) => await Win32API.SendMessageAsync(connection, new ValueSet() {
-                                    { "Progress", e.ProgressPercentage },
-                                    { "OperationID", operationID }
-                                });
                                 op.UpdateProgress += (s, e) =>
                                 {
-                                    if (handleTable.GetValue<bool>(operationID))
+                                    if (progressHandler.CheckCanceled(operationID))
                                     {
                                         throw new Win32Exception(unchecked((int)0x80004005)); // E_FAIL, stops operation
                                     }
+                                    progressHandler.UpdateOperation(operationID, e.ProgressPercentage);
                                 };
 
                                 try
@@ -405,7 +404,7 @@ namespace FilesFullTrust.MessageHandlers
                                     moveTcs.TrySetResult(false);
                                 }
 
-                                handleTable.RemoveValue(operationID);
+                                progressHandler.RemoveOperation(operationID);
 
                                 return (await moveTcs.Task, shellOperationResult);
                             }
@@ -423,7 +422,8 @@ namespace FilesFullTrust.MessageHandlers
                         var copyDestination = ((string)message["destpath"]).Split('|');
                         var operationID = (string)message["operationID"];
                         var overwriteOnCopy = (bool)message["overwrite"];
-                        var (succcess, shellOperationResult) = await Win32API.StartSTATask(async () =>
+                        var ownerHwnd = (long)message["HWND"];
+                        var (success, shellOperationResult) = await Win32API.StartSTATask(async () =>
                         {
                             using (var op = new ShellFileOperations())
                             {
@@ -432,7 +432,7 @@ namespace FilesFullTrust.MessageHandlers
                                 op.Options = ShellFileOperations.OperationFlags.NoConfirmMkDir
                                             | ShellFileOperations.OperationFlags.Silent
                                             | ShellFileOperations.OperationFlags.NoErrorUI;
-
+                                op.OwnerWindow = Win32API.Win32Window.FromLong(ownerHwnd);
                                 op.Options |= !overwriteOnCopy ? ShellFileOperations.OperationFlags.PreserveFileExtensions | ShellFileOperations.OperationFlags.RenameOnCollision
                                     : ShellFileOperations.OperationFlags.NoConfirmation;
 
@@ -445,7 +445,9 @@ namespace FilesFullTrust.MessageHandlers
                                     }
                                 }
 
-                                handleTable.SetValue(operationID, false);
+                                progressHandler.OwnerWindow = op.OwnerWindow;
+                                progressHandler.AddOperation(operationID);
+
                                 var copyTcs = new TaskCompletionSource<bool>();
                                 op.PostCopyItem += (s, e) =>
                                 {
@@ -459,16 +461,13 @@ namespace FilesFullTrust.MessageHandlers
                                 };
                                 op.PostCopyItem += (s, e) => UpdateFileTageDb(s, e, "copy");
                                 op.FinishOperations += (s, e) => copyTcs.TrySetResult(e.Result.Succeeded);
-                                op.UpdateProgress += async (s, e) => await Win32API.SendMessageAsync(connection, new ValueSet() {
-                                    { "Progress", e.ProgressPercentage },
-                                    { "OperationID", operationID }
-                                });
                                 op.UpdateProgress += (s, e) =>
                                 {
-                                    if (handleTable.GetValue<bool>(operationID))
+                                    if (progressHandler.CheckCanceled(operationID))
                                     {
                                         throw new Win32Exception(unchecked((int)0x80004005)); // E_FAIL, stops operation
                                     }
+                                    progressHandler.UpdateOperation(operationID, e.ProgressPercentage);
                                 };
 
                                 try
@@ -480,13 +479,13 @@ namespace FilesFullTrust.MessageHandlers
                                     copyTcs.TrySetResult(false);
                                 }
 
-                                handleTable.RemoveValue(operationID);
+                                progressHandler.RemoveOperation(operationID);
 
                                 return (await copyTcs.Task, shellOperationResult);
                             }
                         });
                         await Win32API.SendMessageAsync(connection, new ValueSet() {
-                            { "Success", succcess },
+                            { "Success", success },
                             { "Result", JsonConvert.SerializeObject(shellOperationResult) }
                         }, message.Get("RequestID", (string)null));
                     }
@@ -495,14 +494,14 @@ namespace FilesFullTrust.MessageHandlers
                 case "CancelOperation":
                     {
                         var operationID = (string)message["operationID"];
-                        handleTable.SetValue(operationID, true);
+                        progressHandler.TryCancel(operationID);
                     }
                     break;
 
                 case "ParseLink":
-                    var linkPath = (string)message["filepath"];
                     try
                     {
+                        var linkPath = (string)message["filepath"];
                         if (linkPath.EndsWith(".lnk"))
                         {
                             using var link = new ShellLink(linkPath, LinkResolution.NoUIWithMsgPump, null, TimeSpan.FromMilliseconds(100));
@@ -539,22 +538,23 @@ namespace FilesFullTrust.MessageHandlers
                         // Could not parse shortcut
                         Program.Logger.Warn(ex, ex.Message);
                         await Win32API.SendMessageAsync(connection, new ValueSet()
-                            {
-                                { "TargetPath", null },
-                                { "Arguments", null },
-                                { "WorkingDirectory", null },
-                                { "RunAsAdmin", false },
-                                { "IsFolder", false }
-                            }, message.Get("RequestID", (string)null));
+                        {
+                            { "TargetPath", null },
+                            { "Arguments", null },
+                            { "WorkingDirectory", null },
+                            { "RunAsAdmin", false },
+                            { "IsFolder", false }
+                        }, message.Get("RequestID", (string)null));
                     }
                     break;
 
                 case "CreateLink":
                 case "UpdateLink":
-                    var linkSavePath = (string)message["filepath"];
-                    var targetPath = (string)message["targetpath"];
                     try
                     {
+                        var linkSavePath = (string)message["filepath"];
+                        var targetPath = (string)message["targetpath"];
+
                         bool success = false;
                         if (linkSavePath.EndsWith(".lnk"))
                         {
@@ -577,6 +577,23 @@ namespace FilesFullTrust.MessageHandlers
                             });
                         }
                         await Win32API.SendMessageAsync(connection, new ValueSet() { { "Success", success } }, message.Get("RequestID", (string)null));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Could not create shortcut
+                        Program.Logger.Warn(ex, ex.Message);
+                        await Win32API.SendMessageAsync(connection, new ValueSet() { { "Success", false } }, message.Get("RequestID", (string)null));
+                    }
+                    break;
+
+                case "SetLinkIcon":
+                    try
+                    {
+                        var linkPath = (string)message["filepath"];
+                        using var link = new ShellLink(linkPath, LinkResolution.NoUIWithMsgPump, null, TimeSpan.FromMilliseconds(100));
+                        link.IconLocation = new IconLocation((string)message["iconFile"], (int)message.Get("iconIndex", 0L));
+                        link.SaveAs(linkPath); // Overwrite if exists
+                        await Win32API.SendMessageAsync(connection, new ValueSet() { { "Success", true } }, message.Get("RequestID", (string)null));
                     }
                     catch (Exception ex)
                     {
@@ -644,7 +661,48 @@ namespace FilesFullTrust.MessageHandlers
                         { "PickedObject", pickedObject }
                     }, message.Get("RequestID", (string)null));
                     break;
+
+                case "ReadCompatOptions":
+                    {
+                        var filePath = (string)message["filepath"];
+                        var compatOptions = Extensions.IgnoreExceptions(() =>
+                        {
+                            using var compatKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers");
+                            if (compatKey == null)
+                            {
+                                return null;
+                            }
+                            return (string)compatKey.GetValue(filePath, null);
+                        }, Program.Logger);
+                        await Win32API.SendMessageAsync(connection, new ValueSet()
+                        {
+                            { "CompatOptions", compatOptions }
+                        }, message.Get("RequestID", (string)null));
+                    }
+                    break;
+
+                case "SetCompatOptions":
+                    {
+                        var filePath = (string)message["filepath"];
+                        var compatOptions = (string)message["options"];
+                        bool success = false;
+                        if (string.IsNullOrEmpty(compatOptions) || compatOptions == "~")
+                        {
+                            success = Win32API.RunPowershellCommand(@$"Remove-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers' -Name '{filePath}' | Out-Null", false); 
+                        }
+                        else
+                        {
+                            success = Win32API.RunPowershellCommand(@$"New-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers' -Name '{filePath}' -Value '{compatOptions}' -PropertyType String -Force | Out-Null", false);
+                        }
+                        await Win32API.SendMessageAsync(connection, new ValueSet() { { "Success", success } }, message.Get("RequestID", (string)null));
+                    }
+                    break;
             }
+        }
+
+        public void WaitForCompletion()
+        {
+            progressHandler.WaitForCompletion();
         }
 
         private void UpdateFileTageDb(object sender, ShellFileOperations.ShellFileOpEventArgs e, string operationType)
@@ -720,8 +778,116 @@ namespace FilesFullTrust.MessageHandlers
 
         public void Dispose()
         {
-            handleTable?.Dispose();
+            progressHandler?.Dispose();
             dbInstance?.Dispose();
+        }
+
+        private class ProgressHandler : IDisposable
+        {
+            private ManualResetEvent operationsCompletedEvent;
+            private PipeStream connection;
+
+            private class OperationWithProgress
+            {
+                public int Progress { get; set; }
+                public bool Canceled { get; set; }
+            }
+
+            private Shell32.ITaskbarList4 taskbar;
+            private ConcurrentDictionary<string, OperationWithProgress> operations;
+
+            public System.Windows.Forms.IWin32Window OwnerWindow { get; set; }
+
+            public ProgressHandler(PipeStream conn)
+            {
+                taskbar = Win32API.CreateTaskbarObject();
+                operations = new ConcurrentDictionary<string, OperationWithProgress>();
+                operationsCompletedEvent = new ManualResetEvent(true);
+                connection = conn;
+            }
+
+            public int Progress
+            {
+                get
+                {
+                    var ongoing = operations.ToList().Where(x => !x.Value.Canceled);
+                    return ongoing.Any() ? (int)ongoing.Average(x => x.Value.Progress) : 0;
+                }
+            }
+
+            public void AddOperation(string uid)
+            {
+                operations.TryAdd(uid, new OperationWithProgress());
+                UpdateTaskbarProgress();
+                operationsCompletedEvent.Reset();
+            }
+
+            public void RemoveOperation(string uid)
+            {
+                operations.TryRemove(uid, out _);
+                UpdateTaskbarProgress();
+                if (!operations.Any())
+                {
+                    operationsCompletedEvent.Set();
+                }
+            }
+
+            public async void UpdateOperation(string uid, int progress)
+            {
+                if (operations.TryGetValue(uid, out var op))
+                {
+                    op.Progress = progress;
+                    await Win32API.SendMessageAsync(connection, new ValueSet() {
+                        { "Progress", progress },
+                        { "OperationID", uid }
+                    });
+                    UpdateTaskbarProgress();
+                }
+            }
+
+            public bool CheckCanceled(string uid)
+            {
+                if (operations.TryGetValue(uid, out var op))
+                {
+                    return op.Canceled;
+                }
+                return true;
+            }
+
+            public void TryCancel(string uid)
+            {
+                if (operations.TryGetValue(uid, out var op))
+                {
+                    op.Canceled = true;
+                    UpdateTaskbarProgress();
+                }
+            }
+
+            private void UpdateTaskbarProgress()
+            {
+                if (OwnerWindow == null || taskbar == null)
+                {
+                    return;
+                }
+                if (operations.Any())
+                {
+                    taskbar.SetProgressValue(OwnerWindow.Handle, (ulong)Progress, 100);
+                }
+                else
+                {
+                    taskbar.SetProgressState(OwnerWindow.Handle, Shell32.TBPFLAG.TBPF_NOPROGRESS);
+                }
+            }
+
+            public void WaitForCompletion()
+            {
+                operationsCompletedEvent.WaitOne();
+            }
+
+            public void Dispose()
+            {
+                operationsCompletedEvent?.Dispose();
+            }
         }
     }
 }

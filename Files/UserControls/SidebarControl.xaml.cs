@@ -5,8 +5,10 @@ using Files.Filesystem;
 using Files.Filesystem.StorageItems;
 using Files.Helpers;
 using Files.Helpers.ContextFlyouts;
+using Files.Services;
 using Files.ViewModels;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Mvvm.Input;
 using Microsoft.Toolkit.Uwp;
 using Microsoft.Toolkit.Uwp.UI;
@@ -32,6 +34,8 @@ namespace Files.UserControls
 {
     public sealed partial class SidebarControl : Microsoft.UI.Xaml.Controls.NavigationView, INotifyPropertyChanged
     {
+        public IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public static SemaphoreSlim SideBarItemsSemaphore = new SemaphoreSlim(1, 1);
 
         public static BulkConcurrentObservableCollection<INavigationControlItem> SideBarItems { get; private set; } = new BulkConcurrentObservableCollection<INavigationControlItem>();
@@ -152,41 +156,41 @@ namespace Files.UserControls
         {
             if ("SidebarFavorites".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowFavoritesSection = false;
+                UserSettingsService.AppearanceSettingsService.ShowFavoritesSection = false;
                 App.SidebarPinnedController.Model.UpdateFavoritesSectionVisibility();
             }
             else if ("SidebarLibraries".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowLibrarySection = false;
+                UserSettingsService.AppearanceSettingsService.ShowLibrarySection = false;
                 App.LibraryManager.UpdateLibrariesSectionVisibility();
             }
             else if ("SidebarCloudDrives".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowCloudDrivesSection = false;
+                UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection = false;
                 App.CloudDrivesManager.UpdateCloudDrivesSectionVisibility();
             }
             else if ("SidebarDrives".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowDrivesSection = false;
+                UserSettingsService.AppearanceSettingsService.ShowDrivesSection = false;
                 App.DrivesManager.UpdateDrivesSectionVisibility();
             }
             else if ("SidebarNetworkDrives".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowNetworkDrivesSection = false;
+                UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection = false;
                 App.NetworkDrivesManager.UpdateNetworkDrivesSectionVisibility();
             }
             else if ("WSL".GetLocalized().Equals(RightClickedItem.Text))
             {
-                AppSettings.ShowWslSection = false;
+                UserSettingsService.AppearanceSettingsService.ShowWslSection = false;
                 App.WSLDistroManager.UpdateWslSectionVisibility();
             }
         }
 
         public void UnpinItem_Click(object sender, RoutedEventArgs e)
         {
-            if (string.Equals(AppSettings.RecycleBinPath, RightClickedItem.Path, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(CommonPaths.RecycleBinPath, RightClickedItem.Path, StringComparison.OrdinalIgnoreCase))
             {
-                AppSettings.PinRecycleBinToSideBar = false;
+                UserSettingsService.AppearanceSettingsService.PinRecycleBinToSidebar = false;
             }
             else if (RightClickedItem.Section == SectionType.Favorites)
             {
@@ -364,7 +368,7 @@ namespace Files.UserControls
                     ShowProperties = false;
                 }
 
-                if (string.Equals(item.Path, AppSettings.RecycleBinPath, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(item.Path, CommonPaths.RecycleBinPath, StringComparison.OrdinalIgnoreCase))
                 {
                     ShowEmptyRecycleBin = true;
                     ShowUnpinItem = true;
@@ -379,9 +383,9 @@ namespace Files.UserControls
                 var menuItems = GetLocationItemMenuItems();
                 var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
 
-                if (!App.AppSettings.MoveOverflowMenuItemsToSubMenu)
+                if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
                 {
-                    secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = 250); // Set menu min width if the overflow menu setting is disabled
+                    secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = Constants.UI.ContextMenuItemsMaxWidth); // Set menu min width if the overflow menu setting is disabled
                 }
 
                 secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
@@ -431,9 +435,9 @@ namespace Files.UserControls
             var menuItems = GetLocationItemMenuItems();
             var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
 
-            if (!App.AppSettings.MoveOverflowMenuItemsToSubMenu)
+            if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
             {
-                secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = 250); // Set menu min width if the overflow menu setting is disabled
+                secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = Constants.UI.ContextMenuItemsMaxWidth); // Set menu min width if the overflow menu setting is disabled
             }
 
             secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
@@ -578,8 +582,8 @@ namespace Files.UserControls
                 e.Handled = true;
                 isDropOnProcess = true;
 
-                var (handledByFtp, storageItems) = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(e.DataView);
-                storageItems ??= new List<IStorageItemWithPath>();
+                var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(e.DataView);
+                var storageItems = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(e.DataView);
 
                 if (string.IsNullOrEmpty(locationItem.Path) && SectionType.Favorites.Equals(locationItem.Section) && storageItems.Any())
                 {
@@ -613,7 +617,7 @@ namespace Files.UserControls
                 }
                 else if (handledByFtp)
                 {
-                    if (locationItem.Path.StartsWith(App.AppSettings.RecycleBinPath))
+                    if (locationItem.Path.StartsWith(CommonPaths.RecycleBinPath))
                     {
                         e.AcceptedOperation = DataPackageOperation.None;
                     }
@@ -631,7 +635,7 @@ namespace Files.UserControls
                 else
                 {
                     e.DragUIOverride.IsCaptionVisible = true;
-                    if (locationItem.Path.StartsWith(App.AppSettings.RecycleBinPath))
+                    if (locationItem.Path.StartsWith(CommonPaths.RecycleBinPath))
                     {
                         e.DragUIOverride.Caption = string.Format("MoveToFolderCaptionText".GetLocalized(), locationItem.Text);
                         e.AcceptedOperation = DataPackageOperation.Move;
@@ -700,8 +704,16 @@ namespace Files.UserControls
             }
         }
 
+        private bool lockFlag = false;
+
         private async void NavigationViewLocationItem_Drop(object sender, DragEventArgs e)
         {
+            if (lockFlag)
+            {
+                return;
+            }
+            lockFlag = true;
+
             dragOverItem = null; // Reset dragged over item
             dragOverSection = null; // Reset dragged over section
 
@@ -711,7 +723,7 @@ namespace Files.UserControls
             }
 
             // If the dropped item is a folder or file from a file system
-            if (Filesystem.FilesystemHelpers.HasDraggedStorageItems(e.DataView))
+            if (FilesystemHelpers.HasDraggedStorageItems(e.DataView))
             {
                 VisualStateManager.GoToState(sender as Microsoft.UI.Xaml.Controls.NavigationViewItem, "Drop", false);
 
@@ -719,10 +731,10 @@ namespace Files.UserControls
 
                 if (string.IsNullOrEmpty(locationItem.Path) && SectionType.Favorites.Equals(locationItem.Section) && isDropOnProcess) // Pin to Favorites section
                 {
-                    var storageItems = await e.DataView.GetStorageItemsAsync();
+                    var storageItems = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(e.DataView);
                     foreach (var item in storageItems)
                     {
-                        if (item.IsOfType(StorageItemTypes.Folder) && !SidebarPinnedModel.FavoriteItems.Contains(item.Path))
+                        if (item.ItemType == FilesystemItemType.Directory && !SidebarPinnedModel.FavoriteItems.Contains(item.Path))
                         {
                             SidebarPinnedModel.AddItem(item.Path);
                         }
@@ -730,24 +742,30 @@ namespace Files.UserControls
                 }
                 else
                 {
+                    var signal = new AsyncManualResetEvent();
                     SidebarItemDropped?.Invoke(this, new SidebarItemDroppedEventArgs()
                     {
                         Package = e.DataView,
                         ItemPath = locationItem.Path,
-                        AcceptedOperation = e.AcceptedOperation
+                        AcceptedOperation = e.AcceptedOperation,
+                        SignalEvent = signal
                     });
+                    await signal.WaitAsync();
                 }
 
                 isDropOnProcess = false;
                 deferral.Complete();
             }
-            else if ((e.DataView.Properties["sourceLocationItem"] as Microsoft.UI.Xaml.Controls.NavigationViewItem).DataContext is LocationItem sourceLocationItem)
+            else if ((e.DataView.Properties["sourceLocationItem"] as Microsoft.UI.Xaml.Controls.NavigationViewItem)?.DataContext is LocationItem sourceLocationItem)
             {
                 // Else if the dropped item is a location item
 
                 // Swap the two items
                 SidebarPinnedModel.SwapItems(sourceLocationItem, locationItem);
             }
+
+            await Task.Yield();
+            lockFlag = false;
         }
 
         private async void NavigationViewDriveItem_DragOver(object sender, DragEventArgs e)
@@ -761,8 +779,8 @@ namespace Files.UserControls
             var deferral = e.GetDeferral();
             e.Handled = true;
 
-            var (handledByFtp, storageItems) = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(e.DataView);
-            storageItems ??= new List<IStorageItemWithPath>();
+            var handledByFtp = await Filesystem.FilesystemHelpers.CheckDragNeedsFulltrust(e.DataView);
+            var storageItems = await Filesystem.FilesystemHelpers.GetDraggedStorageItems(e.DataView);
 
             if ("DriveCapacityUnknown".GetLocalized().Equals(driveItem.SpaceText, StringComparison.OrdinalIgnoreCase) ||
                 (storageItems.Any() && storageItems.AreItemsAlreadyInFolder(driveItem.Path)))
@@ -812,8 +830,14 @@ namespace Files.UserControls
             deferral.Complete();
         }
 
-        private void NavigationViewDriveItem_Drop(object sender, DragEventArgs e)
+        private async void NavigationViewDriveItem_Drop(object sender, DragEventArgs e)
         {
+            if (lockFlag)
+            {
+                return;
+            }
+            lockFlag = true;
+
             dragOverItem = null; // Reset dragged over item
             dragOverSection = null; // Reset dragged over section
 
@@ -825,13 +849,20 @@ namespace Files.UserControls
             VisualStateManager.GoToState(sender as Microsoft.UI.Xaml.Controls.NavigationViewItem, "Drop", false);
 
             var deferral = e.GetDeferral();
+
+            var signal = new AsyncManualResetEvent();
             SidebarItemDropped?.Invoke(this, new SidebarItemDroppedEventArgs()
             {
                 Package = e.DataView,
                 ItemPath = driveItem.Path,
-                AcceptedOperation = e.AcceptedOperation
+                AcceptedOperation = e.AcceptedOperation,
+                SignalEvent = signal
             });
+            await signal.WaitAsync();
+
             deferral.Complete();
+            await Task.Yield();
+            lockFlag = false;
         }
 
         private void Properties_Click(object sender, RoutedEventArgs e)
@@ -860,7 +891,7 @@ namespace Files.UserControls
         {
             var step = 1;
             var ctrl = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control);
-            originalSize = IsPaneOpen ? AppSettings.SidebarWidth.Value : CompactPaneLength;
+            originalSize = IsPaneOpen ? UserSettingsService.AppearanceSettingsService.SidebarWidth : CompactPaneLength;
 
             if (ctrl.HasFlag(CoreVirtualKeyStates.Down))
             {
@@ -892,7 +923,7 @@ namespace Files.UserControls
                 return;
             }
 
-            App.AppSettings.SidebarWidth = new GridLength(OpenPaneLength);
+            UserSettingsService.AppearanceSettingsService.SidebarWidth = OpenPaneLength;
         }
 
         /// <summary>
@@ -960,7 +991,7 @@ namespace Files.UserControls
         {
             Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 0);
             VisualStateManager.GoToState((sender as Grid).FindAscendant<SplitView>(), "ResizerNormal", true);
-            App.AppSettings.SidebarWidth = new GridLength(OpenPaneLength);
+            UserSettingsService.AppearanceSettingsService.SidebarWidth = OpenPaneLength;
             dragging = false;
         }
 
@@ -982,7 +1013,7 @@ namespace Files.UserControls
         {
             if (DisplayMode == Microsoft.UI.Xaml.Controls.NavigationViewDisplayMode.Expanded)
             {
-                originalSize = IsPaneOpen ? AppSettings.SidebarWidth.Value : CompactPaneLength;
+                originalSize = IsPaneOpen ? UserSettingsService.AppearanceSettingsService.SidebarWidth : CompactPaneLength;
                 Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeWestEast, 0);
                 VisualStateManager.GoToState((sender as Grid).FindAscendant<SplitView>(), "ResizerPressed", true);
                 dragging = true;
@@ -996,7 +1027,7 @@ namespace Files.UserControls
                 var matchingDrive = App.DrivesManager.Drives.FirstOrDefault(x => drivePath.StartsWith(x.Path));
                 if (matchingDrive != null && matchingDrive.Type == DriveType.CDRom && matchingDrive.MaxSpace == ByteSizeLib.ByteSize.FromBytes(0))
                 {
-                    bool ejectButton = await DialogDisplayHelper.ShowDialogAsync("InsertDiscDialog/Title".GetLocalized(), string.Format("InsertDiscDialog/Text".GetLocalized(), matchingDrive.Path), "InsertDiscDialog/OpenDriveButton".GetLocalized(), "InsertDiscDialog/CloseDialogButton".GetLocalized());
+                    bool ejectButton = await DialogDisplayHelper.ShowDialogAsync("InsertDiscDialog/Title".GetLocalized(), string.Format("InsertDiscDialog/Text".GetLocalized(), matchingDrive.Path), "InsertDiscDialog/OpenDriveButton".GetLocalized(), "Close".GetLocalized());
                     if (ejectButton)
                     {
                         await DriveHelpers.EjectDeviceAsync(matchingDrive.Path);
@@ -1073,7 +1104,7 @@ namespace Files.UserControls
                     var shiftPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
                     var shellMenuItems = await ContextFlyoutItemHelper.GetItemContextShellCommandsAsync(connection: await AppServiceConnectionHelper.Instance, currentInstanceViewModel: null, workingDir: null,
                         new List<ListedItem>() { new ListedItem(null) { ItemPath = RightClickedItem.Path } }, shiftPressed: shiftPressed, showOpenMenu: false);
-                    if (!App.AppSettings.MoveOverflowMenuItemsToSubMenu)
+                    if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
                     {
                         var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(shellMenuItems);
                         if (secondaryElements.Any())
@@ -1083,7 +1114,7 @@ namespace Files.UserControls
                             var itemsControl = secondaryMenu?.Child.FindDescendant<ItemsControl>();
                             if (itemsControl is not null)
                             {
-                                secondaryElements.OfType<FrameworkElement>().ForEach(x => x.MaxWidth = itemsControl.ActualWidth - 10); // Set items max width to current menu width (#5555)
+                                secondaryElements.OfType<FrameworkElement>().ForEach(x => x.MaxWidth = itemsControl.ActualWidth - Constants.UI.ContextMenuLabelMargin); // Set items max width to current menu width (#5555)
                             }
 
                             itemContextMenuFlyout.SecondaryCommands.Add(new AppBarSeparator());
@@ -1232,6 +1263,7 @@ namespace Files.UserControls
         public DataPackageView Package { get; set; }
         public string ItemPath { get; set; }
         public DataPackageOperation AcceptedOperation { get; set; }
+        public AsyncManualResetEvent SignalEvent { get; set; }
     }
 
     public class SidebarItemInvokedEventArgs : EventArgs

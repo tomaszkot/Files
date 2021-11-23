@@ -14,7 +14,12 @@ namespace Files.Helpers
     {
         public static async Task ExtractArchive(BaseStorageFile archive, BaseStorageFolder destinationFolder, IProgress<float> progressDelegate, CancellationToken cancellationToken)
         {
-            using (ZipFile zipFile = new ZipFile(await archive.OpenStreamForReadAsync()))
+            ZipFile zipFile = await Filesystem.FilesystemTasks.Wrap(async () => new ZipFile(await archive.OpenStreamForReadAsync()));
+            if (zipFile == null)
+            {
+                return;
+            }
+            using (zipFile)
             {
                 zipFile.IsStreamOwner = true;
                 List<ZipEntry> directoryEntries = new List<ZipEntry>();
@@ -37,12 +42,13 @@ namespace Files.Helpers
                 }
 
                 var wnt = new WindowsNameTransform(destinationFolder.Path);
+                var zipEncoding = ZipStorageFolder.DetectFileEncoding(zipFile);
 
                 var directories = new List<string>();
                 try
                 {
-                    directories.AddRange(directoryEntries.Select((item) => wnt.TransformDirectory(item.Name)));
-                    directories.AddRange(fileEntries.Select((item) => Path.GetDirectoryName(wnt.TransformFile(item.Name))));
+                    directories.AddRange(directoryEntries.Select((entry) => wnt.TransformDirectory(ZipStorageFolder.DecodeEntryName(entry, zipEncoding))));
+                    directories.AddRange(fileEntries.Select((entry) => Path.GetDirectoryName(wnt.TransformFile(ZipStorageFolder.DecodeEntryName(entry, zipEncoding)))));
                 }
                 catch (InvalidNameException ex)
                 {
@@ -93,7 +99,7 @@ namespace Files.Helpers
                         continue; // TODO: support password protected archives
                     }
 
-                    string filePath = wnt.TransformFile(entry.Name);
+                    string filePath = wnt.TransformFile(ZipStorageFolder.DecodeEntryName(entry, zipEncoding));
 
                     var hFile = NativeFileOperationsHelper.CreateFileForWrite(filePath);
                     if (hFile.IsInvalid)
@@ -106,17 +112,25 @@ namespace Files.Helpers
                     {
                         int currentBlockSize = 0;
 
-                        using (Stream entryStream = zipFile.GetInputStream(entry))
+                        try
                         {
-                            while ((currentBlockSize = await entryStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                            using (Stream entryStream = zipFile.GetInputStream(entry))
                             {
-                                await destinationStream.WriteAsync(buffer, 0, currentBlockSize);
-
-                                if (cancellationToken.IsCancellationRequested) // Check if cancelled
+                                while ((currentBlockSize = await entryStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                                 {
-                                    return;
+                                    await destinationStream.WriteAsync(buffer, 0, currentBlockSize);
+
+                                    if (cancellationToken.IsCancellationRequested) // Check if cancelled
+                                    {
+                                        return;
+                                    }
                                 }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            App.Logger.Warn(ex, $"Error extracting file: {filePath}");
+                            return; // TODO: handle error
                         }
                     }
 

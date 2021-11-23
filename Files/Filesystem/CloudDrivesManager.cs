@@ -2,6 +2,10 @@ using Files.Common;
 using Files.DataModels.NavigationControlItems;
 using Files.Filesystem.Cloud;
 using Files.Helpers;
+using Files.Services;
+using Files.UserControls;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
+using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +15,8 @@ namespace Files.Filesystem
 {
     public class CloudDrivesManager
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         private static readonly Logger Logger = App.Logger;
         private readonly List<DriveItem> drivesList = new List<DriveItem>();
 
@@ -28,13 +34,9 @@ namespace Files.Filesystem
             }
         }
 
-        public CloudDrivesManager()
-        {
-        }
-
         public async Task EnumerateDrivesAsync()
         {
-            if (!App.AppSettings.ShowCloudDrivesSection)
+            if (!UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection)
             {
                 return;
             }
@@ -72,7 +74,7 @@ namespace Files.Filesystem
 
         public async void UpdateCloudDrivesSectionVisibility()
         {
-            if (App.AppSettings.ShowCloudDrivesSection)
+            if (UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection)
             {
                 await EnumerateDrivesAsync();
             }

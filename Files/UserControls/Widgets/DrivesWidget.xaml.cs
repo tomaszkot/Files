@@ -1,9 +1,11 @@
 ﻿using Files.DataModels.NavigationControlItems;
 using Files.Filesystem;
 using Files.Helpers;
+using Files.Services;
 using Files.Helpers.XamlHelpers;
 using Files.ViewModels;
 using Files.ViewModels.Widgets;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.ObjectModel;
@@ -12,6 +14,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.Foundation.Collections;
+using Windows.Foundation.Metadata;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -23,6 +26,8 @@ namespace Files.UserControls.Widgets
 {
     public sealed partial class DrivesWidget : UserControl, IWidgetItemModel, INotifyPropertyChanged
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         public SettingsViewModel AppSettings => App.AppSettings;
 
         public delegate void DrivesWidgetInvokedEventHandler(object sender, DrivesWidgetInvokedEventArgs e);
@@ -56,7 +61,7 @@ namespace Files.UserControls.Widgets
 
         public string AutomationProperties => "DrivesWidgetAutomationProperties/Name".GetLocalized();
 
-        public bool IsWidgetSettingEnabled => App.AppSettings.ShowDrivesWidget;
+        public bool IsWidgetSettingEnabled => UserSettingsService.WidgetsSettingsService.ShowDrivesWidget;
 
         public DrivesWidget()
         {
@@ -196,7 +201,22 @@ namespace Files.UserControls.Widgets
 
         private async void GoToStorageSense_Click(object sender, RoutedEventArgs e)
         {
-            await Launcher.LaunchUriAsync(new Uri("ms-settings:storagesense"));
+            string clickedCard = (sender as Button).Tag.ToString();
+            var connection = await AppServiceConnectionHelper.Instance;
+            if (connection != null
+                && !clickedCard.StartsWith("C:", StringComparison.OrdinalIgnoreCase)
+                && ApiInformation.IsApiContractPresent("Windows.Foundation.UniversalApiContract", 8))
+            {
+                await connection.SendMessageAsync(new ValueSet()
+                {
+                    { "Arguments", "LaunchSettings" },
+                    { "page", "page=SettingsPageStorageSenseStorageOverview&target=SystemSettings_StorageSense_VolumeListLink" }
+                });
+            }
+            else
+            {
+                await Launcher.LaunchUriAsync(new Uri("ms-settings:storagesense"));
+            }
         }
 
         private async Task<bool> CheckEmptyDrive(string drivePath)
@@ -206,7 +226,7 @@ namespace Files.UserControls.Widgets
                 var matchingDrive = App.DrivesManager.Drives.FirstOrDefault(x => drivePath.StartsWith(x.Path));
                 if (matchingDrive != null && matchingDrive.Type == DriveType.CDRom && matchingDrive.MaxSpace == ByteSizeLib.ByteSize.FromBytes(0))
                 {
-                    bool ejectButton = await DialogDisplayHelper.ShowDialogAsync("InsertDiscDialog/Title".GetLocalized(), string.Format("InsertDiscDialog/Text".GetLocalized(), matchingDrive.Path), "InsertDiscDialog/OpenDriveButton".GetLocalized(), "InsertDiscDialog/CloseDialogButton".GetLocalized());
+                    bool ejectButton = await DialogDisplayHelper.ShowDialogAsync("InsertDiscDialog/Title".GetLocalized(), string.Format("InsertDiscDialog/Text".GetLocalized(), matchingDrive.Path), "InsertDiscDialog/OpenDriveButton".GetLocalized(), "Close".GetLocalized());
                     if (ejectButton)
                     {
                         await DriveHelpers.EjectDeviceAsync(matchingDrive.Path);

@@ -1,6 +1,10 @@
 ﻿using Files.Common;
 using Files.DataModels.NavigationControlItems;
 using Files.Helpers;
+using Files.Services;
+using Files.UserControls;
+using Microsoft.Toolkit.Mvvm.ComponentModel;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
@@ -13,6 +17,8 @@ namespace Files.Filesystem
 {
     public class NetworkDrivesManager
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
         private static readonly Logger Logger = App.Logger;
         private readonly List<DriveItem> drivesList = new List<DriveItem>();
 
@@ -36,7 +42,7 @@ namespace Files.Filesystem
             {
                 DeviceID = "network-folder",
                 Text = "Network".GetLocalized(),
-                Path = App.AppSettings.NetworkFolderPath,
+                Path = CommonPaths.NetworkFolderPath,
                 Type = DriveType.Network,
                 ItemType = NavigationControlItemType.Drive
             };
@@ -48,7 +54,7 @@ namespace Files.Filesystem
 
         public async Task EnumerateDrivesAsync()
         {
-            if (!App.AppSettings.ShowNetworkDrivesSection)
+            if (!UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection)
             {
                 return;
             }
@@ -89,7 +95,7 @@ namespace Files.Filesystem
 
         public async void UpdateNetworkDrivesSectionVisibility()
         {
-            if (App.AppSettings.ShowNetworkDrivesSection)
+            if (UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection)
             {
                 await EnumerateDrivesAsync();
             }

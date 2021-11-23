@@ -1,8 +1,11 @@
-﻿using Files.DataModels;
+﻿using Files.Common;
 using Files.Enums;
+using Files.Extensions;
 using Files.Filesystem;
 using Files.Interacts;
+using Files.Services;
 using Files.ViewModels;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Mvvm.Input;
 using Microsoft.Toolkit.Uwp;
 using System;
@@ -20,18 +23,7 @@ namespace Files.Helpers
 {
     public static class ContextFlyoutItemHelper
     {
-        private static List<ShellNewEntry> cachedNewContextMenuEntries;
-
-        public static List<ShellNewEntry> CachedNewContextMenuEntries
-        {
-            get
-            {
-                cachedNewContextMenuEntries ??= Task.Run(() => RegistryHelper.GetNewContextMenuEntries()).Result;
-                return cachedNewContextMenuEntries;
-            }
-        }
-
-        private static List<ContextMenuFlyoutItemViewModel> cachedNewItemItems;
+        public static Task<List<ShellNewEntry>> CachedNewContextMenuEntries = ShellNewEntryExtensions.GetNewContextMenuEntries();
 
         public static List<ContextMenuFlyoutItemViewModel> GetItemContextCommandsWithoutShellItems(CurrentInstanceViewModel currentInstanceViewModel, string workingDir, List<ListedItem> selectedItems, BaseLayoutCommandsViewModel commandsViewModel, bool shiftPressed, bool showOpenMenu, SelectedItemsPropertiesViewModel selectedItemsPropertiesViewModel)
         {
@@ -62,10 +54,12 @@ namespace Files.Helpers
             items = items.Where(x => Check(item: x, currentInstanceViewModel: currentInstanceViewModel, selectedItems: selectedItems, shiftPressed: shiftPressed)).ToList();
             items.ForEach(x => x.Items = x.Items?.Where(y => Check(item: y, currentInstanceViewModel: currentInstanceViewModel, selectedItems: selectedItems, shiftPressed: shiftPressed)).ToList());
 
+            IUserSettingsService userSettingsService = Ioc.Default.GetService<IUserSettingsService>();
+
             var overflow = items.Where(x => x.ID == "ItemOverflow").FirstOrDefault();
             if (overflow != null)
             {
-                if (!shiftPressed && App.AppSettings.MoveOverflowMenuItemsToSubMenu) // items with ShowOnShift to overflow menu
+                if (!shiftPressed && userSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu) // items with ShowOnShift to overflow menu
                 {
                     var overflowItems = items.Where(x => x.ShowOnShift).ToList();
 
@@ -101,6 +95,8 @@ namespace Files.Helpers
 
         public static List<ContextMenuFlyoutItemViewModel> GetBaseLayoutMenuItems(CurrentInstanceViewModel currentInstanceViewModel, ItemViewModel itemViewModel, BaseLayoutCommandsViewModel commandsViewModel)
         {
+            IUserSettingsService userSettingsService = Ioc.Default.GetService<IUserSettingsService>();
+
             return new List<ContextMenuFlyoutItemViewModel>()
             {
                 new ContextMenuFlyoutItemViewModel()
@@ -271,7 +267,7 @@ namespace Files.Helpers
                         },
                         new ContextMenuFlyoutItemViewModel()
                         {
-                            Text = "BaseLayoutContextFlyoutSortBySyncStatus/Text".GetLocalized(),
+                            Text = "SyncStatus".GetLocalized(),
                             IsChecked = itemViewModel.IsSortedBySyncStatus,
                             Command = new RelayCommand(() => itemViewModel.IsSortedBySyncStatus = true),
                             ShowItem = currentInstanceViewModel.IsPageTypeCloudDrive,
@@ -282,7 +278,7 @@ namespace Files.Helpers
                             Text = "BaseLayoutContextFlyoutSortByFileTag/Text".GetLocalized(),
                             IsChecked = itemViewModel.IsSortedByFileTag,
                             Command = new RelayCommand(() => itemViewModel.IsSortedByFileTag = true),
-                            ShowItem = App.AppSettings.AreFileTagsEnabled,
+                            ShowItem = userSettingsService.PreferencesSettingsService.AreFileTagsEnabled,
                             ShowInRecycleBin = true,
                             ShowInSearchPage = true,
                             ItemType = ItemType.Toggle
@@ -421,7 +417,7 @@ namespace Files.Helpers
                         },
                         new ContextMenuFlyoutItemViewModel()
                         {
-                            Text = "BaseLayoutContextFlyoutSortBySyncStatus/Text".GetLocalized(),
+                            Text = "SyncStatus".GetLocalized(),
                             IsChecked = currentInstanceViewModel.FolderSettings.DirectoryGroupOption == GroupOption.SyncStatus,
                             ShowItem = currentInstanceViewModel.IsPageTypeCloudDrive,
                             Command = currentInstanceViewModel.FolderSettings.ChangeGroupOptionCommand,
@@ -432,7 +428,7 @@ namespace Files.Helpers
                         {
                             Text = "BaseLayoutContextFlyoutSortByFileTag/Text".GetLocalized(),
                             IsChecked = currentInstanceViewModel.FolderSettings.DirectoryGroupOption == GroupOption.FileTag,
-                            ShowItem = App.AppSettings.AreFileTagsEnabled,
+                            ShowItem = userSettingsService.PreferencesSettingsService.AreFileTagsEnabled,
                             ShowInRecycleBin = true,
                             ShowInSearchPage = true,
                             Command = currentInstanceViewModel.FolderSettings.ChangeGroupOptionCommand,
@@ -458,6 +454,15 @@ namespace Files.Helpers
                             CommandParameter = GroupOption.DateDeleted,
                             ItemType = ItemType.Toggle,
                             ShowItem = currentInstanceViewModel.IsPageTypeRecycleBin,
+                        },
+                        new ContextMenuFlyoutItemViewModel()
+                        {
+                            Text = "NavToolbarArrangementOptionFolderPath/Text".GetLocalized(),
+                            IsChecked = currentInstanceViewModel.FolderSettings.DirectoryGroupOption == GroupOption.FolderPath,
+                            Command = currentInstanceViewModel.FolderSettings.ChangeGroupOptionCommand,
+                            CommandParameter = GroupOption.FolderPath,
+                            ItemType = ItemType.Toggle,
+                            ShowItem = currentInstanceViewModel.IsPageTypeLibrary,
                         },
                     }
                 },
@@ -531,7 +536,7 @@ namespace Files.Helpers
                     Text = "BaseLayoutItemContextFlyoutPinToFavorites/Text".GetLocalized(),
                     Glyph = "\uE840",
                     Command = commandsViewModel.PinDirectoryToFavoritesCommand,
-                    ShowItem = !itemViewModel.CurrentFolder.IsPinned & App.AppSettings.ShowFavoritesSection,
+                    ShowItem = !itemViewModel.CurrentFolder.IsPinned & userSettingsService.AppearanceSettingsService.ShowFavoritesSection,
                     ShowInFtpPage = true,
                 },
                 new ContextMenuFlyoutItemViewModel()
@@ -539,7 +544,7 @@ namespace Files.Helpers
                     Text = "BaseLayoutContextFlyoutUnpinFromFavorites/Text".GetLocalized(),
                     Glyph = "\uE77A",
                     Command = commandsViewModel.UnpinDirectoryFromFavoritesCommand,
-                    ShowItem = itemViewModel.CurrentFolder.IsPinned & App.AppSettings.ShowFavoritesSection,
+                    ShowItem = itemViewModel.CurrentFolder.IsPinned & userSettingsService.AppearanceSettingsService.ShowFavoritesSection,
                     ShowInFtpPage = true,
                 },
                 new ContextMenuFlyoutItemViewModel()
@@ -601,6 +606,8 @@ namespace Files.Helpers
 
         public static List<ContextMenuFlyoutItemViewModel> GetBaseItemMenuItems(BaseLayoutCommandsViewModel commandsViewModel, List<ListedItem> selectedItems, SelectedItemsPropertiesViewModel selectedItemsPropertiesViewModel, CurrentInstanceViewModel currentInstanceViewModel)
         {
+            IUserSettingsService userSettingsService = Ioc.Default.GetService<IUserSettingsService>();
+
             return new List<ContextMenuFlyoutItemViewModel>()
             {
                 new ContextMenuFlyoutItemViewModel()
@@ -661,7 +668,7 @@ namespace Files.Helpers
                     Glyph = "\uE117",
                     GlyphFontFamilyName = "CustomGlyph",
                     Command = commandsViewModel.OpenDirectoryInNewPaneCommand,
-                    ShowItem = App.AppSettings.IsDualPaneEnabled && selectedItems.All(i => i.PrimaryItemAttribute == Windows.Storage.StorageItemTypes.Folder),
+                    ShowItem = userSettingsService.MultitaskingSettingsService.IsDualPaneEnabled && selectedItems.All(i => i.PrimaryItemAttribute == Windows.Storage.StorageItemTypes.Folder),
                     SingleItemOnly = true,
                     ShowInSearchPage = true,
                     ShowInFtpPage = true,
@@ -873,7 +880,7 @@ namespace Files.Helpers
                 },
                 new ContextMenuFlyoutItemViewModel()
                 {
-                    Text = "BaseLayoutItemContextFlyoutDelete/Text".GetLocalized(),
+                    Text = "Delete".GetLocalized(),
                     //Glyph = "\uF74D",
                     IsPrimary = true,
                     ColoredIcon = new ColoredIconModel()
@@ -957,7 +964,7 @@ namespace Files.Helpers
                     Text = "BaseLayoutItemContextFlyoutPinToFavorites/Text".GetLocalized(),
                     Glyph = "\uE840",
                     Command = commandsViewModel.SidebarPinItemCommand,
-                    ShowItem = selectedItems.All(x => x.PrimaryItemAttribute == StorageItemTypes.Folder && !x.IsZipItem && !x.IsPinned) & App.AppSettings.ShowFavoritesSection,
+                    ShowItem = selectedItems.All(x => x.PrimaryItemAttribute == StorageItemTypes.Folder && !x.IsZipItem && !x.IsPinned) & userSettingsService.AppearanceSettingsService.ShowFavoritesSection,
                     ShowInSearchPage = true,
                     ShowInFtpPage = true,
                 },
@@ -966,7 +973,7 @@ namespace Files.Helpers
                     Text = "BaseLayoutContextFlyoutUnpinFromFavorites/Text".GetLocalized(),
                     Glyph = "\uE77A",
                     Command = commandsViewModel.SidebarUnpinItemCommand,
-                    ShowItem = selectedItems.All(x => x.PrimaryItemAttribute == StorageItemTypes.Folder && !x.IsZipItem && x.IsPinned) & App.AppSettings.ShowFavoritesSection,
+                    ShowItem = selectedItems.All(x => x.PrimaryItemAttribute == StorageItemTypes.Folder && !x.IsZipItem && x.IsPinned) & userSettingsService.AppearanceSettingsService.ShowFavoritesSection,
                     ShowInSearchPage = true,
                     ShowInFtpPage = true,
                 },
@@ -1035,17 +1042,16 @@ namespace Files.Helpers
                 }
             };
 
-            CachedNewContextMenuEntries?.ForEach(i =>
+            var cachedNewContextMenuEntries = CachedNewContextMenuEntries.IsCompletedSuccessfully ? CachedNewContextMenuEntries.Result : null;
+            cachedNewContextMenuEntries?.ForEach(i =>
             {
-                if (i.Icon != null)
+                if (!string.IsNullOrEmpty(i.IconBase64))
                 {
                     // loading the bitmaps takes a while, so this caches them
-                    var bitmap = cachedNewItemItems?.Where(x => x.Text == i.Name).FirstOrDefault()?.BitmapIcon;
-                    if (bitmap == null)
-                    {
-                        bitmap = new BitmapImage();
-                        bitmap.SetSourceAsync(i.Icon).AsTask().Wait(50);
-                    }
+                    byte[] bitmapData = Convert.FromBase64String(i.IconBase64);
+                    using var ms = new MemoryStream(bitmapData);
+                    var bitmap = new BitmapImage();
+                    _ = bitmap.SetSourceAsync(ms.AsRandomAccessStream());
                     list.Add(new ContextMenuFlyoutItemViewModel()
                     {
                         Text = i.Name,
@@ -1066,7 +1072,6 @@ namespace Files.Helpers
                 }
             });
 
-            cachedNewItemItems = list;
             return list;
         }
     }

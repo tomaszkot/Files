@@ -15,11 +15,11 @@ namespace FilesFullTrust.MessageHandlers
 {
     public class LibrariesHandler : IMessageHandler
     {
-        private NamedPipeServerStream connection;
+        private PipeStream connection;
 
         private FileSystemWatcher librariesWatcher;
 
-        public void Initialize(NamedPipeServerStream connection)
+        public void Initialize(PipeStream connection)
         {
             this.connection = connection;
 
@@ -43,7 +43,7 @@ namespace FilesFullTrust.MessageHandlers
             librariesWatcher.EnableRaisingEvents = true;
         }
 
-        public async Task ParseArgumentsAsync(NamedPipeServerStream connection, Dictionary<string, object> message, string arguments)
+        public async Task ParseArgumentsAsync(PipeStream connection, Dictionary<string, object> message, string arguments)
         {
             switch (arguments)
             {
@@ -195,6 +195,8 @@ namespace FilesFullTrust.MessageHandlers
                             if (updated)
                             {
                                 library.Commit();
+                                var libField = typeof(ShellLibrary).GetField("folders", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                libField.SetValue(library, null); // Force library folder reload
                                 response.Add("Update", JsonConvert.SerializeObject(ShellFolderExtensions.GetShellLibraryItem(library, libPath)));
                             }
                         }

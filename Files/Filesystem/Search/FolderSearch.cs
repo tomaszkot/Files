@@ -3,6 +3,8 @@ using Files.Common;
 using Files.Extensions;
 using Files.Filesystem.StorageItems;
 using Files.Helpers;
+using Files.Services;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
@@ -22,6 +24,10 @@ namespace Files.Filesystem.Search
 {
     public class FolderSearch
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
+        private IFileTagsSettingsService FileTagsSettingsService { get; } = Ioc.Default.GetService<IFileTagsSettingsService>();
+
         private const uint defaultStepSize = 500;
 
         public string Query { get; set; }
@@ -34,6 +40,23 @@ namespace Files.Filesystem.Search
         private uint UsedMaxItemCount => MaxItemCount > 0 ? MaxItemCount : uint.MaxValue;
 
         public EventHandler SearchTick;
+
+        private bool IsAQSQuery => Query is not null && (Query.StartsWith("$") || Query.Contains(":"));
+
+        private string QueryWithWildcard
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Query) && Query.Contains('.')) // ".docx" -> "*.docx"
+                {
+                    var split = Query.Split('.');
+                    var leading = string.Join('.', split.SkipLast(1));
+                    var query = $"{leading}*.{split.Last()}";
+                    return $"{query}*";
+                }
+                return $"{Query}*";
+            }
+        }
 
         public string AQSQuery
         {
@@ -50,7 +73,7 @@ namespace Files.Filesystem.Search
                 }
                 else
                 {
-                    return $"System.FileName:\"{Query}\"";
+                    return $"System.FileName:\"{QueryWithWildcard}\"";
                 }
             }
         }
@@ -165,7 +188,7 @@ namespace Files.Filesystem.Search
         {
             //var sampler = new IntervalSampler(500);
             var tagName = AQSQuery.Substring("tag:".Length);
-            var tags = App.AppSettings.FileTagsSettings.GetTagsByName(tagName);
+            var tags = FileTagsSettingsService.GetTagsByName(tagName);
             if (!tags.Any())
             {
                 return;
@@ -185,7 +208,8 @@ namespace Files.Filesystem.Search
                 {
                     var isSystem = ((FileAttributes)findData.dwFileAttributes & FileAttributes.System) == FileAttributes.System;
                     var isHidden = ((FileAttributes)findData.dwFileAttributes & FileAttributes.Hidden) == FileAttributes.Hidden;
-                    bool shouldBeListed = !isHidden || (App.AppSettings.AreHiddenItemsVisible && (!isSystem || !App.AppSettings.AreSystemItemsHidden));
+                    
+                    bool shouldBeListed = !isHidden || (UserSettingsService.PreferencesSettingsService.AreHiddenItemsVisible && (!isSystem || !UserSettingsService.PreferencesSettingsService.AreSystemItemsHidden));
 
                     if (shouldBeListed)
                     {
@@ -238,20 +262,12 @@ namespace Files.Filesystem.Search
                 if (workingFolder)
                 {
                     await SearchAsync(workingFolder, results, token);
-                    //foreach (var item in await SearchAsync(workingFolder))
-                    //{
-                    //    results.Add(item);
-                    //}
-                    hiddenOnlyFromWin32 = true;
+                    hiddenOnlyFromWin32 = (results.Count != 0);
                 }
 
-                if (!hiddenOnlyFromWin32 || App.AppSettings.AreHiddenItemsVisible)
+                if (!IsAQSQuery && (!hiddenOnlyFromWin32 || UserSettingsService.PreferencesSettingsService.AreHiddenItemsVisible))
                 {
                     await SearchWithWin32Async(folder, hiddenOnlyFromWin32, UsedMaxItemCount - (uint)results.Count, results, token);
-                    //foreach (var item in)
-                    //{
-                    //    results.Add(item);
-                    //}
                 }
             }
         }
@@ -262,7 +278,7 @@ namespace Files.Filesystem.Search
             (IntPtr hFile, WIN32_FIND_DATA findData) = await Task.Run(() =>
             {
                 int additionalFlags = FIND_FIRST_EX_LARGE_FETCH;
-                IntPtr hFileTsk = FindFirstFileExFromApp($"{folder}\\*{Query}*.*", FINDEX_INFO_LEVELS.FindExInfoBasic,
+                IntPtr hFileTsk = FindFirstFileExFromApp($"{folder}\\{QueryWithWildcard}", FINDEX_INFO_LEVELS.FindExInfoBasic,
                     out WIN32_FIND_DATA findDataTsk, FINDEX_SEARCH_OPS.FindExSearchNameMatch, IntPtr.Zero, additionalFlags);
                 return (hFileTsk, findDataTsk);
             }).WithTimeoutAsync(TimeSpan.FromSeconds(5));
@@ -283,8 +299,8 @@ namespace Files.Filesystem.Search
                         var isSystem = ((FileAttributes)findData.dwFileAttributes & FileAttributes.System) == FileAttributes.System;
                         var isHidden = ((FileAttributes)findData.dwFileAttributes & FileAttributes.Hidden) == FileAttributes.Hidden;
                         bool shouldBeListed = hiddenOnly ?
-                            isHidden && (!isSystem || !App.AppSettings.AreSystemItemsHidden) :
-                            !isHidden || (App.AppSettings.AreHiddenItemsVisible && (!isSystem || !App.AppSettings.AreSystemItemsHidden));
+                            isHidden && (!isSystem || !UserSettingsService.PreferencesSettingsService.AreSystemItemsHidden) :
+                            !isHidden || (UserSettingsService.PreferencesSettingsService.AreHiddenItemsVisible && (!isSystem || !UserSettingsService.PreferencesSettingsService.AreSystemItemsHidden));
 
                         if (shouldBeListed)
                         {
@@ -334,8 +350,6 @@ namespace Files.Filesystem.Search
                     ItemPath = itemPath,
                     IsHiddenItem = isHidden,
                     LoadFileIcon = false,
-                    LoadUnknownTypeGlyph = true,
-                    LoadFolderGlyph = false,
                     FileExtension = itemFileExtension,
                     ItemType = itemType,
                     Opacity = isHidden ? Constants.UI.DimItemOpacity : 1
@@ -352,8 +366,6 @@ namespace Files.Filesystem.Search
                         ItemPath = itemPath,
                         IsHiddenItem = isHidden,
                         LoadFileIcon = false,
-                        LoadUnknownTypeGlyph = false,
-                        LoadFolderGlyph = true,
                         Opacity = isHidden ? Constants.UI.DimItemOpacity : 1
                     };
                 }
@@ -368,11 +380,6 @@ namespace Files.Filesystem.Search
                             _ = FilesystemTasks.Wrap(() => CoreApplication.MainView.DispatcherQueue.EnqueueAsync(async () =>
                             {
                                 listedItem.FileImage = await t.Result.ToBitmapAsync();
-                                listedItem.CustomIconData = t.Result;
-                                listedItem.LoadFolderGlyph = false;
-                                listedItem.LoadUnknownTypeGlyph = false;
-                                listedItem.LoadWebShortcutGlyph = false;
-                                listedItem.LoadFileIcon = true;
                             }, Windows.System.DispatcherQueuePriority.Low));
                         }
                     });
@@ -392,10 +399,9 @@ namespace Files.Filesystem.Search
                     PrimaryItemAttribute = StorageItemTypes.Folder,
                     ItemName = folder.DisplayName,
                     ItemPath = folder.Path,
-                    LoadFolderGlyph = true,
                     ItemDateModifiedReal = props.DateModified,
                     ItemDateCreatedReal = folder.DateCreated,
-                    LoadUnknownTypeGlyph = false,
+                    NeedsPlaceholderGlyph = false,
                     Opacity = 1
                 };
             }
@@ -419,14 +425,13 @@ namespace Files.Filesystem.Search
                     ItemName = file.DisplayName,
                     ItemPath = file.Path,
                     LoadFileIcon = false,
-                    LoadUnknownTypeGlyph = true,
-                    LoadFolderGlyph = false,
                     FileExtension = itemFileExtension,
                     FileSizeBytes = (long)props.Size,
                     FileSize = itemSize,
                     ItemDateModifiedReal = props.DateModified,
                     ItemDateCreatedReal = file.DateCreated,
                     ItemType = itemType,
+                    NeedsPlaceholderGlyph = false,
                     Opacity = 1
                 };
             }
@@ -435,12 +440,11 @@ namespace Files.Filesystem.Search
                 var iconData = await FileThumbnailHelper.LoadIconFromStorageItemAsync(item, ThumbnailSize, ThumbnailMode.ListView);
                 if (iconData != null)
                 {
-                    listedItem.CustomIconData = iconData;
-                    listedItem.FileImage = await listedItem.CustomIconData.ToBitmapAsync();
-                    listedItem.LoadUnknownTypeGlyph = false;
-                    listedItem.LoadWebShortcutGlyph = false;
-                    listedItem.LoadFolderGlyph = false;
-                    listedItem.LoadFileIcon = true;
+                    listedItem.FileImage = await iconData.ToBitmapAsync();
+                }
+                else
+                {
+                    listedItem.NeedsPlaceholderGlyph = true;
                 }
             }
             return listedItem;

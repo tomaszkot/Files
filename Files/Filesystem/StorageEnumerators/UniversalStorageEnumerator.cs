@@ -2,7 +2,9 @@
 using Files.Extensions;
 using Files.Filesystem.StorageItems;
 using Files.Helpers;
+using Files.Services;
 using Files.Views.LayoutModes;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
@@ -12,6 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace Files.Filesystem.StorageEnumerators
 {
@@ -24,7 +27,8 @@ namespace Files.Filesystem.StorageEnumerators
             Type sourcePageType,
             CancellationToken cancellationToken,
             int countLimit,
-            Func<List<ListedItem>, Task> intermediateAction
+            Func<List<ListedItem>, Task> intermediateAction,
+            Dictionary<string, BitmapImage> defaultIconPairs = null
         )
         {
             var sampler = new IntervalSampler(500);
@@ -73,6 +77,10 @@ namespace Files.Filesystem.StorageEnumerators
                         var folder = await AddFolderAsync(item.AsBaseStorageFolder(), currentStorageFolder, returnformat, cancellationToken);
                         if (folder != null)
                         {
+                            if (defaultIconPairs?.ContainsKey(string.Empty) ?? false)
+                            {
+                                folder.SetDefaultIcon(defaultIconPairs[string.Empty]);
+                            }
                             tempList.Add(folder);
                         }
                     }
@@ -81,6 +89,17 @@ namespace Files.Filesystem.StorageEnumerators
                         var fileEntry = await AddFileAsync(item.AsBaseStorageFile(), currentStorageFolder, returnformat, cancellationToken);
                         if (fileEntry != null)
                         {
+                            if (defaultIconPairs != null)
+                            {
+                                if (!string.IsNullOrEmpty(fileEntry.FileExtension))
+                                {
+                                    var lowercaseExtension = fileEntry.FileExtension.ToLowerInvariant();
+                                    if (defaultIconPairs.ContainsKey(lowercaseExtension))
+                                    {
+                                        fileEntry.SetDefaultIcon(defaultIconPairs[lowercaseExtension]);
+                                    }
+                                }
+                            }
                             tempList.Add(fileEntry);
                         }
                     }
@@ -151,11 +170,9 @@ namespace Files.Filesystem.StorageEnumerators
                     ItemType = folder.DisplayType,
                     IsHiddenItem = false,
                     Opacity = 1,
-                    LoadFolderGlyph = true,
                     FileImage = null,
                     LoadFileIcon = false,
                     ItemPath = string.IsNullOrEmpty(folder.Path) ? PathNormalization.Combine(currentStorageFolder.Path, folder.Name) : folder.Path,
-                    LoadUnknownTypeGlyph = false,
                     FileSize = null,
                     FileSizeBytes = 0
                 };
@@ -170,9 +187,11 @@ namespace Files.Filesystem.StorageEnumerators
             CancellationToken cancellationToken
         )
         {
+            IUserSettingsService userSettingsService = Ioc.Default.GetService<IUserSettingsService>();
+
             var basicProperties = await file.GetBasicPropertiesAsync();
             // Display name does not include extension
-            var itemName = string.IsNullOrEmpty(file.DisplayName) || App.AppSettings.ShowFileExtensions ?
+            var itemName = string.IsNullOrEmpty(file.DisplayName) || userSettingsService.PreferencesSettingsService.ShowFileExtensions ?
                 file.Name : file.DisplayName;
             var itemModifiedDate = basicProperties.DateModified;
             var itemCreatedDate = file.DateCreated;
@@ -180,9 +199,7 @@ namespace Files.Filesystem.StorageEnumerators
             var itemSize = ByteSize.FromBytes(basicProperties.Size).ToBinaryString().ConvertSizeAbbreviation();
             var itemSizeBytes = basicProperties.Size;
             var itemType = file.DisplayType;
-            var itemFolderImgVis = false;
             var itemFileExtension = file.FileType;
-            var itemEmptyImgVis = true;
             var itemThumbnailImgVis = false;
 
             if (cancellationToken.IsCancellationRequested)
@@ -212,11 +229,8 @@ namespace Files.Filesystem.StorageEnumerators
                     FileExtension = itemFileExtension,
                     IsHiddenItem = false,
                     Opacity = 1,
-                    LoadUnknownTypeGlyph = itemEmptyImgVis,
                     FileImage = null,
-                    CustomIconData = null,
                     LoadFileIcon = itemThumbnailImgVis,
-                    LoadFolderGlyph = itemFolderImgVis,
                     ItemName = itemName,
                     ItemDateModifiedReal = itemModifiedDate,
                     ItemDateCreatedReal = itemCreatedDate,

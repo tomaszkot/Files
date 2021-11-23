@@ -1,13 +1,14 @@
-﻿using Files.DataModels;
+﻿using Files.Common;
 using Files.Dialogs;
 using Files.Enums;
 using Files.Filesystem;
 using Files.Filesystem.StorageItems;
 using Files.Interacts;
+using Files.Services;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,7 +28,6 @@ namespace Files.Helpers
                 RequestedOperation = DataPackageOperation.Move
             };
             ConcurrentBag<IStorageItem> items = new ConcurrentBag<IStorageItem>();
-            FilesystemResult result = (FilesystemResult)false;
 
             var canFlush = true;
             if (associatedInstance.SlimContentPage.IsItemSelected)
@@ -60,27 +60,27 @@ namespace Files.Helpers
                         }
                         else if (listedItem.PrimaryItemAttribute == StorageItemTypes.File || listedItem is ZipItem)
                         {
-                            result = await associatedInstance.FilesystemViewModel.GetFileFromPathAsync(listedItem.ItemPath)
+                            var result = await associatedInstance.FilesystemViewModel.GetFileFromPathAsync(listedItem.ItemPath)
                                 .OnSuccess(t => items.Add(t));
                             if (!result)
                             {
-                                throw new IOException($"Failed to process {listedItem.ItemPath}.");
+                                throw new IOException($"Failed to process {listedItem.ItemPath}.", (int)result.ErrorCode);
                             }
                         }
                         else
                         {
-                            result = await associatedInstance.FilesystemViewModel.GetFolderFromPathAsync(listedItem.ItemPath)
+                            var result = await associatedInstance.FilesystemViewModel.GetFolderFromPathAsync(listedItem.ItemPath)
                                 .OnSuccess(t => items.Add(t));
                             if (!result)
                             {
-                                throw new IOException($"Failed to process {listedItem.ItemPath}.");
+                                throw new IOException($"Failed to process {listedItem.ItemPath}.", (int)result.ErrorCode);
                             }
                         }
                     }));
                 }
-                catch
+                catch (Exception ex)
                 {
-                    if (result.ErrorCode == FileSystemStatusCode.Unauthorized)
+                    if (ex.HResult == (int)FileSystemStatusCode.Unauthorized)
                     {
                         // Try again with fulltrust process
                         var connection = await AppServiceConnectionHelper.Instance;
@@ -138,7 +138,6 @@ namespace Files.Helpers
             ConcurrentBag<IStorageItem> items = new ConcurrentBag<IStorageItem>();
 
             string copySourcePath = associatedInstance.FilesystemViewModel.WorkingDirectory;
-            FilesystemResult result = (FilesystemResult)false;
 
             var canFlush = true;
             if (associatedInstance.SlimContentPage.IsItemSelected)
@@ -161,27 +160,27 @@ namespace Files.Helpers
                         }
                         else if (listedItem.PrimaryItemAttribute == StorageItemTypes.File || listedItem is ZipItem)
                         {
-                            result = await associatedInstance.FilesystemViewModel.GetFileFromPathAsync(listedItem.ItemPath)
+                            var result = await associatedInstance.FilesystemViewModel.GetFileFromPathAsync(listedItem.ItemPath)
                                 .OnSuccess(t => items.Add(t));
                             if (!result)
                             {
-                                throw new IOException($"Failed to process {listedItem.ItemPath}.");
+                                throw new IOException($"Failed to process {listedItem.ItemPath}.", (int)result.ErrorCode);
                             }
                         }
                         else
                         {
-                            result = await associatedInstance.FilesystemViewModel.GetFolderFromPathAsync(listedItem.ItemPath)
+                            var result = await associatedInstance.FilesystemViewModel.GetFolderFromPathAsync(listedItem.ItemPath)
                                 .OnSuccess(t => items.Add(t));
                             if (!result)
                             {
-                                throw new IOException($"Failed to process {listedItem.ItemPath}.");
+                                throw new IOException($"Failed to process {listedItem.ItemPath}.", (int)result.ErrorCode);
                             }
                         }
                     }));
                 }
-                catch
+                catch (Exception ex)
                 {
-                    if (result.ErrorCode == FileSystemStatusCode.Unauthorized)
+                    if (ex.HResult == (int)FileSystemStatusCode.Unauthorized)
                     {
                         // Try again with fulltrust process
                         var connection = await AppServiceConnectionHelper.Instance;
@@ -231,12 +230,14 @@ namespace Files.Helpers
             if (packageView && packageView.Result != null)
             {
                 await associatedInstance.FilesystemHelpers.PerformOperationTypeAsync(packageView.Result.RequestedOperation, packageView, destinationPath, false, true);
-                associatedInstance.SlimContentPage.ItemManipulationModel.RefreshItemsOpacity();
+                associatedInstance?.SlimContentPage?.ItemManipulationModel?.RefreshItemsOpacity();
             }
         }
 
         public static async Task<bool> RenameFileItemAsync(ListedItem item, string oldName, string newName, IShellPage associatedInstance)
         {
+            IUserSettingsService userSettingsService = Ioc.Default.GetService<IUserSettingsService>();
+
             if (oldName == newName || string.IsNullOrEmpty(newName))
             {
                 return true;
@@ -250,7 +251,7 @@ namespace Files.Helpers
             }
             else
             {
-                if (item.IsShortcutItem || !App.AppSettings.ShowFileExtensions)
+                if (item.IsShortcutItem || !userSettingsService.PreferencesSettingsService.ShowFileExtensions)
                 {
                     newName += item.FileExtension;
                 }
@@ -328,7 +329,7 @@ namespace Files.Helpers
 
             if (created == FileSystemStatusCode.Unauthorized)
             {
-                await DialogDisplayHelper.ShowDialogAsync("AccessDeniedCreateDialog/Title".GetLocalized(), "AccessDeniedCreateDialog/Text".GetLocalized());
+                await DialogDisplayHelper.ShowDialogAsync("AccessDenied".GetLocalized(), "AccessDeniedCreateDialog/Text".GetLocalized());
             }
 
             return created.Result.Item2;

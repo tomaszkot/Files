@@ -1,6 +1,7 @@
 ﻿using Files.Common;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -16,14 +17,23 @@ namespace FilesFullTrust.MessageHandlers
 {
     public class ApplicationLaunchHandler : IMessageHandler
     {
-        public void Initialize(NamedPipeServerStream connection)
+        public void Initialize(PipeStream connection)
         {
         }
 
-        public Task ParseArgumentsAsync(NamedPipeServerStream connection, Dictionary<string, object> message, string arguments)
+        public Task ParseArgumentsAsync(PipeStream connection, Dictionary<string, object> message, string arguments)
         {
             switch (arguments)
             {
+                case "LaunchSettings":
+                    {
+                        var page = message.Get("page", (string)null);
+                        var appActiveManager = new Shell32.IApplicationActivationManager();
+                        appActiveManager.ActivateApplication("windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel",
+                            page, Shell32.ACTIVATEOPTIONS.AO_NONE, out _);
+                        break;
+                    }
+
                 case "LaunchApp":
                     if (message.ContainsKey("Application"))
                     {
@@ -34,6 +44,16 @@ namespace FilesFullTrust.MessageHandlers
                     {
                         var applicationList = JsonConvert.DeserializeObject<IEnumerable<string>>((string)message["ApplicationList"]);
                         HandleApplicationsLaunch(applicationList, message);
+                    }
+                    break;
+
+                case "RunCompatibilityTroubleshooter":
+                    {
+                        var filePath = (string)message["filepath"];
+                        var afPath = Path.Combine(Path.GetTempPath(), "CompatibilityTroubleshooterAnswerFile.xml");
+                        File.WriteAllText(afPath, string.Format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Answers Version=\"1.0\"><Interaction ID=\"IT_LaunchMethod\"><Value>CompatTab</Value></Interaction><Interaction ID=\"IT_BrowseForFile\"><Value>{0}</Value></Interaction></Answers>", filePath));
+                        message["Parameters"] = $"/id PCWDiagnostic /af \"{afPath}\"";
+                        HandleApplicationLaunch("msdt.exe", message);
                     }
                     break;
             }
@@ -91,6 +111,14 @@ namespace FilesFullTrust.MessageHandlers
                 else
                 {
                     process.StartInfo.Arguments = arguments;
+                    // Refresh env variables for the child process
+                    foreach (DictionaryEntry ent in Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Machine))
+                        process.StartInfo.EnvironmentVariables[(string)ent.Key] = (string)ent.Value;
+                    foreach (DictionaryEntry ent in Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User))
+                        process.StartInfo.EnvironmentVariables[(string)ent.Key] = (string)ent.Value;
+                    process.StartInfo.EnvironmentVariables["PATH"] = string.Join(";", 
+                        Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine),
+                        Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User));
                 }
                 process.StartInfo.WorkingDirectory = workingDirectory;
                 process.Start();

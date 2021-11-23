@@ -66,9 +66,6 @@
   <data name="ErrorDialogSkip" xml:space="preserve">
     <value>スキップ</value>
   </data>
-  <data name="ErrorDialogCancel" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="PropertiesItemType.Text" xml:space="preserve">
     <value>種類:</value>
   </data>
@@ -111,10 +108,10 @@
   <data name="SettingsAboutThirdPartyLicenses.Text" xml:space="preserve">
     <value>サードパーティライセンス</value>
   </data>
-  <data name="SettingsAboutTitle.Text" xml:space="preserve">
+  <data name="About" xml:space="preserve">
     <value>Filesについて</value>
   </data>
-  <data name="SettingsAppearanceTitle.Text" xml:space="preserve">
+  <data name="Appearance" xml:space="preserve">
     <value>外観</value>
   </data>
   <data name="SettingsFilesAndFoldersTitle.Text" xml:space="preserve">
@@ -122,12 +119,6 @@
   </data>
   <data name="SettingsExperimentalTitle.Text" xml:space="preserve">
     <value>実験的機能</value>
-  </data>
-  <data name="SettingsNavAbout.Content" xml:space="preserve">
-    <value>Filesについて</value>
-  </data>
-  <data name="SettingsNavAppearance.Content" xml:space="preserve">
-    <value>外観</value>
   </data>
   <data name="SettingsNavExperimental.Content" xml:space="preserve">
     <value>実験的機能</value>
@@ -243,9 +234,6 @@
   <data name="BaseLayoutItemContextFlyoutCopy.Text" xml:space="preserve">
     <value>コピー</value>
   </data>
-  <data name="BaseLayoutItemContextFlyoutDelete.Text" xml:space="preserve">
-    <value>削除</value>
-  </data>
   <data name="BaseLayoutItemContextFlyoutRename.Text" xml:space="preserve">
     <value>名前の変更</value>
   </data>
@@ -276,12 +264,6 @@
   <data name="RenameDialog.PrimaryButtonText" xml:space="preserve">
     <value>名前を変更</value>
   </data>
-  <data name="RenameDialog.SecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
-  <data name="NewTab" xml:space="preserve">
-    <value>新しいタブ</value>
-  </data>
   <data name="SystemTheme" xml:space="preserve">
     <value>システム設定の使用</value>
   </data>
@@ -310,7 +292,7 @@
     <value>次に進む (Alt+右矢印)</value>
   </data>
   <data name="NavUpButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>上のレベルに戻る (Alt+上矢印)</value>
+    <value>1つ上のディレクトリへ行く (Alt+上矢印)</value>
   </data>
   <data name="NavRefreshButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>最新の情報に更新 (F5)</value>
@@ -329,9 +311,6 @@
   </data>
   <data name="ItemAlreadyExistsDialogContent" xml:space="preserve">
     <value>同じ名前のファイルがこのフォルダにすでに存在します。</value>
-  </data>
-  <data name="ItemAlreadyExistsDialogPrimaryButtonText" xml:space="preserve">
-    <value>名前の変更</value>
   </data>
   <data name="ItemAlreadyExistsDialogSecondaryButtonText" xml:space="preserve">
     <value>既存のファイルを置換</value>
@@ -359,9 +338,6 @@
   </data>
   <data name="AccessDeniedDeleteDialog.Text" xml:space="preserve">
     <value>ファイルを削除できませんでした</value>
-  </data>
-  <data name="AccessDeniedDeleteDialog.Title" xml:space="preserve">
-    <value>アクセスが拒否されました</value>
   </data>
   <data name="DriveUnpluggedDialog.Text" xml:space="preserve">
     <value>ドライブを挿入してください</value>
@@ -459,16 +435,13 @@
   <data name="PropertiesAccessed.Text" xml:space="preserve">
     <value>アクセス日時:</value>
   </data>
-  <data name="ConfirmEmptyBinDialog.SecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="ConfirmEmptyBinDialogContent" xml:space="preserve">
     <value>すべてのファイルを削除してもよろしいですか？</value>
   </data>
   <data name="ConfirmEmptyBinDialogTitle" xml:space="preserve">
     <value>ごみ箱を空にする</value>
   </data>
-  <data name="ConfirmEmptyBinDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="Yes" xml:space="preserve">
     <value>実行</value>
   </data>
   <data name="ItemSizeBytes" xml:space="preserve">
@@ -504,11 +477,8 @@
   <data name="BitlockerDialog.PrimaryButtonText" xml:space="preserve">
     <value>ロック解除</value>
   </data>
-  <data name="BitlockerDialog.SecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="BitlockerDialog.Title" xml:space="preserve">
-    <value>パスワードを入力してドライブのロックを解除します</value>
+    <value>パスワードを入力してドライブのロックを解除</value>
   </data>
   <data name="BitlockerDialogInputText.PlaceholderText" xml:space="preserve">
     <value>パスワード</value>
@@ -532,7 +502,7 @@
     <value>別のユーザーとして実行</value>
   </data>
   <data name="PropertiesDriveItemTypesEquals" xml:space="preserve">
-    <value>すべでの種類の {0}</value>
+    <value>すべての種類の {0}</value>
   </data>
   <data name="PropertiesDriveItemTypeDifferent" xml:space="preserve">
     <value>他の種類</value>
@@ -627,10 +597,10 @@
   <data name="PropertiesShortcutTypeLink" xml:space="preserve">
     <value>Web リンク</value>
   </data>
-  <data name="PropertiesDialogTabGeneral.Content" xml:space="preserve">
+  <data name="General" xml:space="preserve">
     <value>概要</value>
   </data>
-  <data name="PropertiesDialogTabShortcut.Content" xml:space="preserve">
+  <data name="Shortcut" xml:space="preserve">
     <value>ショートカット</value>
   </data>
   <data name="ShortcutFileType" xml:space="preserve">
@@ -652,7 +622,7 @@
     <value>ログの場所を開く</value>
   </data>
   <data name="ExceptionNotificationBody" xml:space="preserve">
-    <value>ファイルは、開発者がまだ準備していない問題に遭遇しました。</value>
+    <value>Filesは、開発者がまだ想定していない問題に遭遇しました。</value>
   </data>
   <data name="ExceptionNotificationHeader" xml:space="preserve">
     <value>問題が発生しました</value>
@@ -711,9 +681,6 @@
   <data name="ContextMenuMoreItemsLabel" xml:space="preserve">
     <value>その他</value>
   </data>
-  <data name="PropertiesDialogCancelButton.Content" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="SettingsMultitaskingTitle.Text" xml:space="preserve">
     <value>マルチタスク</value>
   </data>
@@ -747,14 +714,14 @@
   <data name="AddDialogDescription.Text" xml:space="preserve">
     <value>以下で新しいファイルの種類を選択してください</value>
   </data>
-  <data name="AddDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="Cancel" xml:space="preserve">
     <value>キャンセル</value>
   </data>
   <data name="AddDialogListFolderHeader" xml:space="preserve">
     <value>フォルダ</value>
   </data>
   <data name="AddDialogListFolderSubHeader" xml:space="preserve">
-    <value>空のフォルダを作成します</value>
+    <value>空のフォルダを作成</value>
   </data>
   <data name="BaseLayoutContextFlyoutLayoutMode.Text" xml:space="preserve">
     <value>レイアウト モード</value>
@@ -769,7 +736,7 @@
     <value>フォルダの最新情報に更新</value>
   </data>
   <data name="NavUpButton.AutomationProperties.Name" xml:space="preserve">
-    <value>上のレベルに戻る</value>
+    <value>1つ上のディレクトリへ行く</value>
   </data>
   <data name="SettingsPreferencesEditTerminalApplications.AutomationProperties.Name" xml:space="preserve">
     <value>ターミナルアプリを編集</value>
@@ -783,7 +750,7 @@
   <data name="AccessDeniedCreateDialog.Text" xml:space="preserve">
     <value>このファイルを作成できませんでした</value>
   </data>
-  <data name="AccessDeniedCreateDialog.Title" xml:space="preserve">
+  <data name="AccessDenied" xml:space="preserve">
     <value>アクセスが拒否されました</value>
   </data>
   <data name="FileItemAutomation" xml:space="preserve">
@@ -922,7 +889,7 @@
     <value>撮影日</value>
   </data>
   <data name="PropertyChannelCount" xml:space="preserve">
-    <value>チャネル数</value>
+    <value>チャンネル数</value>
   </data>
   <data name="PropertyEncodingBitrate" xml:space="preserve">
     <value>エンコード ビットレート</value>
@@ -1018,7 +985,7 @@
     <value>サムネイル (小) の URI</value>
   </data>
   <data name="PropertyUserWebUrl" xml:space="preserve">
-    <value>ユーザー Web URL</value>
+    <value>User Web URL</value>
   </data>
   <data name="PropertyWriter" xml:space="preserve">
     <value>ライター</value>
@@ -1125,9 +1092,6 @@
   <data name="PropertySaveErrorDialog.SecondaryButtonText" xml:space="preserve">
     <value>閉じる</value>
   </data>
-  <data name="PropertySaveErrorDialog.CloseButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="PropertySaveErrorMessage.Text" xml:space="preserve">
     <value>プロパティを保存する際に問題が発生しました。</value>
   </data>
@@ -1170,17 +1134,14 @@
   <data name="SettingsAboutSupportUsListViewItem.AutomationProperties.Name" xml:space="preserve">
     <value>PayPal で私たちを支援してください</value>
   </data>
-  <data name="PropertiesDialogTabDetails.Content" xml:space="preserve">
+  <data name="Details" xml:space="preserve">
     <value>詳細</value>
   </data>
-  <data name="UpdateConsentDialogCloseButtonText" xml:space="preserve">
+  <data name="UpdateClose" xml:space="preserve">
     <value>いいえ</value>
   </data>
   <data name="UpdateConsentDialogContent" xml:space="preserve">
     <value>Files の最新版をダウンロードし、インストールしますか？</value>
-  </data>
-  <data name="UpdateConsentDialogPrimaryButtonText" xml:space="preserve">
-    <value>はい</value>
   </data>
   <data name="UpdateConsentDialogTitle" xml:space="preserve">
     <value>更新あり</value>
@@ -1211,9 +1172,6 @@
   </data>
   <data name="AppBarButtonRemove.Label" xml:space="preserve">
     <value>削除</value>
-  </data>
-  <data name="ItemAlreadyExistsDialogCloseButtonText" xml:space="preserve">
-    <value>キャンセル</value>
   </data>
   <data name="BaseLayoutItemContextFlyoutOpenInNewPane.Text" xml:space="preserve">
     <value>セカンダリ ペインで開く</value>
@@ -1287,9 +1245,6 @@
   <data name="BundlesWidgetAddBundleNameInput.PlaceholderText" xml:space="preserve">
     <value>バンドル名を入力</value>
   </data>
-  <data name="BundlesWidgetRenameBundleDialogCloseButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="BundlesWidgetRenameBundleDialogInputPlaceholderText" xml:space="preserve">
     <value>新しい名前</value>
   </data>
@@ -1301,9 +1256,6 @@
   </data>
   <data name="BundlesWidgetRenameBundleDialogTitleText" xml:space="preserve">
     <value>"{0}" の名前を変更</value>
-  </data>
-  <data name="BundlesWidgetCreateBundleDialogCloseButtonText" xml:space="preserve">
-    <value>キャンセル</value>
   </data>
   <data name="BundlesWidgetAddBundleInputPlaceholderText" xml:space="preserve">
     <value>新しい名前</value>
@@ -1527,9 +1479,6 @@
   <data name="ElevateConfirmDialog.CloseButtonText" xml:space="preserve">
     <value>いいえ</value>
   </data>
-  <data name="ElevateConfirmDialog.PrimaryButtonText" xml:space="preserve">
-    <value>はい</value>
-  </data>
   <data name="ElevateConfirmDialog.Title" xml:space="preserve">
     <value>続行するには管理者権限が必要です</value>
   </data>
@@ -1569,7 +1518,7 @@
   <data name="LibraryItemAutomation" xml:space="preserve">
     <value>ライブラリ</value>
   </data>
-  <data name="PropertiesDialogTabLibrary.Content" xml:space="preserve">
+  <data name="Library" xml:space="preserve">
     <value>ライブラリ</value>
   </data>
   <data name="LibraryLocations.Text" xml:space="preserve">
@@ -1608,12 +1557,6 @@
   <data name="DialogCreateLibraryButtonText" xml:space="preserve">
     <value>作成</value>
   </data>
-  <data name="DialogCancelButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
-  <data name="DialogDeleteLibraryButtonText" xml:space="preserve">
-    <value>削除</value>
-  </data>
   <data name="DrivesWidgetOpenStorageSenseButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>ストレージ センサーを開く</value>
   </data>
@@ -1625,9 +1568,6 @@
   </data>
   <data name="CopyItemsDialogPrimaryButtonText" xml:space="preserve">
     <value>コピー</value>
-  </data>
-  <data name="CopyItemsDialogSecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
   </data>
   <data name="CopyItemsDialogSubtitleMultiple" xml:space="preserve">
     <value>{0} 個のファイルがコピーされます</value>
@@ -1641,29 +1581,17 @@
   <data name="MoveItemsDialogPrimaryButtonText" xml:space="preserve">
     <value>移動</value>
   </data>
-  <data name="MoveItemsDialogSecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="MoveItemsDialogSubtitleMultiple" xml:space="preserve">
     <value>{0} 個のファイルが移動されます</value>
   </data>
   <data name="MoveItemsDialogTitle" xml:space="preserve">
     <value>ファイルを移動</value>
   </data>
-  <data name="DeleteItemsDialogPrimaryButtonText" xml:space="preserve">
-    <value>削除</value>
-  </data>
-  <data name="DeleteItemsDialogSecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="DeleteItemsDialogSubtitleMultiple" xml:space="preserve">
     <value>{0} 個のファイルが削除されます</value>
   </data>
   <data name="ConflictingItemsDialogPrimaryButtonText" xml:space="preserve">
     <value>続行</value>
-  </data>
-  <data name="ConflictingItemsDialogSecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
   </data>
   <data name="ConflictingItemsDialogTitle" xml:space="preserve">
     <value>削除</value>
@@ -1713,17 +1641,11 @@
   <data name="ConflictingItemsDialogSubtitleSingleConflictMultipleNonConflicts" xml:space="preserve">
     <value>1 個の競合するファイル名と、{0} 個のそうでないファイルがあります</value>
   </data>
-  <data name="ConflictingItemsDialogItemOptionGenerateNewName.Text" xml:space="preserve">
-    <value>名前の変更</value>
-  </data>
   <data name="ConflictingItemsDialogItemOptionReplaceExisting.Text" xml:space="preserve">
     <value>既存のファイルを置換</value>
   </data>
   <data name="ConflictingItemsDialogItemOptionSkip.Text" xml:space="preserve">
     <value>スキップ</value>
-  </data>
-  <data name="ConflictingItemsDialogOptionGenerateNewName.Text" xml:space="preserve">
-    <value>名前の変更</value>
   </data>
   <data name="ConflictingItemsDialogOptionReplaceExisting.Text" xml:space="preserve">
     <value>既存のファイルを置換</value>
@@ -1731,16 +1653,13 @@
   <data name="ConflictingItemsDialogOptionSkip.Text" xml:space="preserve">
     <value>スキップ</value>
   </data>
-  <data name="ConflictingItemsDialogTakenActionGenerateNewName" xml:space="preserve">
-    <value>名前の変更</value>
-  </data>
   <data name="ConflictingItemsDialogTakenActionReplaceExisting" xml:space="preserve">
     <value>既存のファイルを置換</value>
   </data>
   <data name="ConflictingItemsDialogTakenActionSkip" xml:space="preserve">
     <value>スキップ</value>
   </data>
-  <data name="ConflictingItemsDialogItemDefaultOption.Content" xml:space="preserve">
+  <data name="GenerateNewName" xml:space="preserve">
     <value>名前の変更</value>
   </data>
   <data name="ConflictingItemsDialogUndoOption.Text" xml:space="preserve">
@@ -1974,12 +1893,6 @@
   <data name="OngoingTasksDismissBannerButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>閉じる</value>
   </data>
-  <data name="OngoingTasksCancelBannerButton.AutomationProperties.Name" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
-  <data name="OngoingTasksCancelBannerButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
   <data name="NavToolbarWidgets.Label" xml:space="preserve">
     <value>ウィジェット</value>
   </data>
@@ -2010,12 +1923,6 @@
   <data name="NavToolbarLayout.Text" xml:space="preserve">
     <value>レイアウト</value>
   </data>
-  <data name="SettingsDialogCloseButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>閉じる</value>
-  </data>
-  <data name="BaseLayoutContextFlyoutSortBySyncStatus.Text" xml:space="preserve">
-    <value>同期状態</value>
-  </data>
   <data name="StatusDeletionFailedDetails_Plural" xml:space="preserve">
     <value>{0} ファイルを {1} から削除に失敗しました</value>
   </data>
@@ -2037,11 +1944,11 @@
   <data name="NavigationToolbarNewPane.Label" xml:space="preserve">
     <value>新しいペイン</value>
   </data>
-  <data name="PropertiesDialogTabSecurity.Content" xml:space="preserve">
+  <data name="Security" xml:space="preserve">
     <value>セキュリティ</value>
   </data>
   <data name="SecurityAdvancedPermissions.Text" xml:space="preserve">
-    <value>権限の設定 (高度)</value>
+    <value>詳細設定</value>
   </data>
   <data name="SecurityAllowLabel.Text" xml:space="preserve">
     <value>許可</value>
@@ -2053,7 +1960,7 @@
     <value>フル コントロール</value>
   </data>
   <data name="SecurityListDirectoryLabel.Text" xml:space="preserve">
-    <value>ディレクトリの内容を一覧表示する</value>
+    <value>ディレクトリの内容を一覧表示</value>
   </data>
   <data name="SecurityModifyLabel.Text" xml:space="preserve">
     <value>変更</value>
@@ -2077,13 +1984,13 @@
     <value>不明なアカウント</value>
   </data>
   <data name="SecurityCannotReadProperties.Text" xml:space="preserve">
-    <value>このオブジェクトのセキュリティプロパティを表示する権限がありません。 [詳細権限]をクリックして続行します。</value>
+    <value>このオブジェクトのセキュリティプロパティを表示する権限がありません。 [詳細設定]をクリックして続行します。</value>
   </data>
   <data name="SecurityOwnerLabel.Text" xml:space="preserve">
     <value>所有者</value>
   </data>
   <data name="SecurityUnknownOwnerText.Text" xml:space="preserve">
-    <value>不明な所有者です。</value>
+    <value>不明な所有者</value>
   </data>
   <data name="SettingsNavSidebar.Content" xml:space="preserve">
     <value>サイドバー</value>
@@ -2104,10 +2011,10 @@
     <value>カスタムテーマの詳細</value>
   </data>
   <data name="SettingsThemesTeachingTipHeader.Text" xml:space="preserve">
-    <value>カスタムテーマは、ファイルをパーソナライズするための優れた方法を提供します。</value>
+    <value>カスタムテーマは、あなたの Files を作り上げるのに役立ちます。</value>
   </data>
   <data name="SettingsThemesTeachingTipHyperlinkText.Text" xml:space="preserve">
-    <value>ドキュメントを表示</value>
+    <value>ドキュメントを見る</value>
   </data>
   <data name="VerticalTabFlyout.AutomationProperties.Name" xml:space="preserve">
     <value>垂直タブフライアウト</value>
@@ -2122,7 +2029,7 @@
     <value>新しいライブラリの作成</value>
   </data>
   <data name="SideBarRestoreLibraries.Text" xml:space="preserve">
-    <value>既定のライブラリを復元する</value>
+    <value>既定のライブラリを復元</value>
   </data>
   <data name="DialogRestoreLibrariesButtonText" xml:space="preserve">
     <value>復元</value>
@@ -2131,7 +2038,7 @@
     <value>デフォルトのライブラリを復元してもよろしいですか？ すべてのファイルはストレージに残ります。</value>
   </data>
   <data name="DialogRestoreLibrariesTitleText" xml:space="preserve">
-    <value>ライブラリを復元する</value>
+    <value>ライブラリを復元</value>
   </data>
   <data name="RecentFilesHeader.Text" xml:space="preserve">
     <value>最近使ったファイル</value>
@@ -2143,7 +2050,7 @@
     <value>所有者</value>
   </data>
   <data name="SecurityAdvancedPermissionsTitle" xml:space="preserve">
-    <value>{0} の高度な権限</value>
+    <value>{0} のセキュリティの詳細設定</value>
   </data>
   <data name="SecuritySpecialLabel.Text" xml:space="preserve">
     <value>特別</value>
@@ -2171,9 +2078,6 @@
   </data>
   <data name="SecurityAdvancedInheritedNoLabel" xml:space="preserve">
     <value>いいえ</value>
-  </data>
-  <data name="SecurityAdvancedInheritedYesLabel" xml:space="preserve">
-    <value>はい</value>
   </data>
   <data name="SecurityAdvancedPermissionsLabel.Text" xml:space="preserve">
     <value>アクセス許可</value>
@@ -2209,25 +2113,25 @@
     <value>このフォルダーとサブフォルダー</value>
   </data>
   <data name="SecurityAppendDataLabel.Text" xml:space="preserve">
-    <value>データを追加する</value>
+    <value>データを追加</value>
   </data>
   <data name="SecurityChangePermissionsLabel.Text" xml:space="preserve">
     <value>アクセス許可の変更</value>
   </data>
   <data name="SecurityCreateDirectoriesLabel.Text" xml:space="preserve">
-    <value>フォルダーを作成します。</value>
+    <value>フォルダーの作成</value>
   </data>
   <data name="SecurityCreateFilesLabel.Text" xml:space="preserve">
     <value>ファイルの作成</value>
   </data>
-  <data name="SecurityDeleteLabel.Text" xml:space="preserve">
+  <data name="Delete" xml:space="preserve">
     <value>削除</value>
   </data>
   <data name="SecurityDeleteSubdirectoriesAndFilesLabel.Text" xml:space="preserve">
-    <value>サブディレクトリとファイルを削除する</value>
+    <value>サブディレクトリとファイルを削除</value>
   </data>
   <data name="SecurityExecuteFileLabel.Text" xml:space="preserve">
-    <value>ファイルを実行する</value>
+    <value>ファイルの実行</value>
   </data>
   <data name="SecurityReadAttributesLabel.Text" xml:space="preserve">
     <value>属性の読み取り</value>
@@ -2239,7 +2143,7 @@
     <value>拡張属性の読み取り</value>
   </data>
   <data name="SecurityReadPermissionsLabel.Text" xml:space="preserve">
-    <value>読み取りのアクセス許可</value>
+    <value>アクセス許可の読み取り</value>
   </data>
   <data name="SecurityTakeOwnershipLabel.Text" xml:space="preserve">
     <value>所有権の取得</value>
@@ -2260,25 +2164,25 @@
     <value>なし</value>
   </data>
   <data name="SecurityAdvancedInheritedConvert.Text" xml:space="preserve">
-    <value>継承されたアクセス許可を明示的なアクセス許可に変換する</value>
+    <value>継承されたアクセス許可を明示的なアクセス許可に変換</value>
   </data>
   <data name="SecurityAdvancedInheritedEnable.Text" xml:space="preserve">
     <value>継承の有効化</value>
   </data>
   <data name="SecurityAdvancedInheritedRemove.Text" xml:space="preserve">
-    <value>継承されたすべてのアクセス許可を削除します</value>
+    <value>継承されたすべてのアクセス許可を削除</value>
   </data>
   <data name="SecurityAdvancedReplaceChildPermissions.Text" xml:space="preserve">
-    <value>子オブジェクトの権限をリセットする</value>
+    <value>子オブジェクトの権限をリセット</value>
   </data>
   <data name="SecurityAdvancedReplaceChildPermissions2.ToolTipService.ToolTip" xml:space="preserve">
     <value>すべての子オブジェクトのアクセス許可エントリを、このオブジェクトから継承可能なアクセス許可エントリに置き換えます</value>
   </data>
   <data name="CreateBundleBtn.AutomationProperties.Name" xml:space="preserve">
-    <value>バンドルを作成する</value>
+    <value>バンドルを作成</value>
   </data>
   <data name="CreateBundleBtn.ToolTipService.ToolTip" xml:space="preserve">
-    <value>バンドルを作成する</value>
+    <value>バンドルを作成</value>
   </data>
   <data name="NavigationToolbarClosePane.Label" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
@@ -2298,14 +2202,11 @@
   <data name="PropertyFileVersion" xml:space="preserve">
     <value>ファイルのバージョン</value>
   </data>
-  <data name="PropertySyncStatus" xml:space="preserve">
-    <value>同期状況</value>
-  </data>
   <data name="PreviewPaneLoadCloudItemButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>クラウドからアイテムをダウンロードし、プレビューをロードします</value>
+    <value>クラウドからアイテムをダウンロードし、プレビューを表示</value>
   </data>
   <data name="DecompressArchiveDialog.Title" xml:space="preserve">
-    <value>宛先を選択してファイルを抽出します</value>
+    <value>宛先を選択してファイルを抽出</value>
   </data>
   <data name="DecompressArchiveDialogBrowseFolder.Content" xml:space="preserve">
     <value>ファイルの参照</value>
@@ -2314,7 +2215,7 @@
     <value>完了したら宛先フォルダを開きます</value>
   </data>
   <data name="BaseLayoutItemContextFlyoutExtractFilesOption" xml:space="preserve">
-    <value>ファイルを抽出する</value>
+    <value>ファイルを抽出</value>
   </data>
   <data name="BaseLayoutItemContextFlyoutExtractHereOption" xml:space="preserve">
     <value>ここで抽出</value>
@@ -2335,7 +2236,7 @@
     <value>コンパクトオーバーレイを入力してください</value>
   </data>
   <data name="NavigationToolbarExitCompactOverlay.Label" xml:space="preserve">
-    <value>コンパクトオーバーレイを終了します</value>
+    <value>コンパクトオーバーレイを終了</value>
   </data>
   <data name="WSL" xml:space="preserve">
     <value>WSL</value>
@@ -2347,10 +2248,10 @@
     <value>常にデュアルペインモードで新しいタブを開く</value>
   </data>
   <data name="SettingsMultitaskingEnableDualPane" xml:space="preserve">
-    <value>デュアルペインビューを有効にする</value>
+    <value>デュアルペインビューを有効に</value>
   </data>
   <data name="SettingsVerticalTabFlyout" xml:space="preserve">
-    <value>タイトルバーに垂直タブフライアウトを表示する</value>
+    <value>タイトルバーに垂直タブフライアウトを表示</value>
   </data>
   <data name="SettingsShowCloudDrivesSection.Title" xml:space="preserve">
     <value>クラウドドライブセクションを表示</value>
@@ -2365,33 +2266,33 @@
     <value>ネットワークセクションを表示</value>
   </data>
   <data name="SettingsPinRecycleBin.Title" xml:space="preserve">
-    <value>ごみ箱をお気に入りに固定する</value>
+    <value>ごみ箱をお気に入りに固定</value>
   </data>
   <data name="SettingsShowLibrarySection.Title" xml:space="preserve">
     <value>ライブラリセクションを表示</value>
   </data>
   <data name="SettingsAppearanceTheme" xml:space="preserve">
-    <value>色を選択する</value>
+    <value>色を選択</value>
   </data>
   <data name="SettingsAppearanceCustomThemes" xml:space="preserve">
     <value>カスタム テーマ</value>
   </data>
   <data name="SettingsContextMenuOverflow" xml:space="preserve">
-    <value>オーバーフロー項目をサブメニューに移動します</value>
+    <value>オーバーフロー項目をサブメニューに移動</value>
   </data>
   <data name="SettingsPreferencesAppLanguage.Title" xml:space="preserve">
     <value>言語</value>
   </data>
   <data name="SettingsFilesAndFoldersShowFileExtensions" xml:space="preserve">
-    <value>既知のファイルタイプの拡張子を表示する</value>
+    <value>既知のファイルタイプの拡張子を表示</value>
   </data>
   <data name="SettingsFilesAndFoldersShowHiddenItems" xml:space="preserve">
-    <value>すべてのファイルとフォルダーを表示する</value>
+    <value>すべてのファイルとフォルダーを表示</value>
   </data>
   <data name="SettingsFilesAndFoldersHideSystemItems" xml:space="preserve">
     <value>保護されたオペレーティング システム ファイルを表示しない (推奨)</value>
   </data>
-  <data name="SettingsOpenItemsWithOneclick" xml:space="preserve">
+  <data name="SettingsOpenFilesWithOneClick" xml:space="preserve">
     <value>シングルクリックでアイテムを開く</value>
   </data>
   <data name="SettingsListAndSortDirectoriesAlongsideFiles" xml:space="preserve">
@@ -2401,7 +2302,7 @@
     <value>ファイルやフォルダを検索するときにインデックス付けされていないアイテムを表示する (検索に時間がかかる場合があります)</value>
   </data>
   <data name="SettingsEnableLayoutPreferencesPerFolder" xml:space="preserve">
-    <value>個々のディレクトリの個々の設定を有効にする</value>
+    <value>ディレクトリのごとに設定を保存</value>
   </data>
   <data name="SettingsUsefulLinks.Title" xml:space="preserve">
     <value>役に立つリンク</value>
@@ -2413,10 +2314,10 @@
     <value>よくやり取りする連絡先に固定</value>
   </data>
   <data name="SideBarUnpinFromFavorites.Text" xml:space="preserve">
-    <value>お気に入りから固定を解除する</value>
+    <value>お気に入りから固定解除</value>
   </data>
   <data name="BaseLayoutContextFlyoutUnpinFromFavorites.Text" xml:space="preserve">
-    <value>お気に入りから固定を解除する</value>
+    <value>お気に入りから固定解除</value>
   </data>
   <data name="NavSettingsButton" xml:space="preserve">
     <value>設定</value>
@@ -2433,7 +2334,7 @@
   <data name="ConsentDialogContent" xml:space="preserve">
     <value>更新プログラムをインストールする準備ができました</value>
   </data>
-  <data name="ConsentDialogCloseButtonText" xml:space="preserve">
+  <data name="Close" xml:space="preserve">
     <value>閉じる</value>
   </data>
   <data name="ConsentDialogPrimaryButtonText" xml:space="preserve">
@@ -2518,7 +2419,7 @@
     <value>日付の形式</value>
   </data>
   <data name="SettingsPreferencesShowConfirmDeleteDialog.Title" xml:space="preserve">
-    <value>ファイルやフォルダを削除するときに確認ダイアログを表示する</value>
+    <value>ファイルやフォルダを削除するときに確認ダイアログを表示</value>
   </data>
   <data name="SettingsPreferencesOpenFoldersNewTab.Title" xml:space="preserve">
     <value>新しいタブでフォルダを開く</value>
@@ -2535,7 +2436,7 @@
   <data name="SettingsPrivacyPolicyMarkdownBlock.Text" xml:space="preserve">
     <value>
 *個人情報の収集*
-ファイルは、個人情報を収集、保存、共有、または公開することはありません。
+Filesは、個人情報を収集、保存、共有、または公開することはありません。
 
 *非個人情報の収集*
 
@@ -2571,7 +2472,7 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
   <data name="NavToolbarSortDirectionOptionDescending.Text" xml:space="preserve">
     <value>降順</value>
   </data>
-  <data name="NavToolbarArrangementOptionSyncStatus.Text" xml:space="preserve">
+  <data name="SyncStatus" xml:space="preserve">
     <value>同期状況</value>
   </data>
   <data name="SettingsShowFavoritesSection.Title" xml:space="preserve">
@@ -2593,19 +2494,16 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
     <value>ファイルタグ</value>
   </data>
   <data name="SettingsEditFileTags.AutomationProperties.Name" xml:space="preserve">
-    <value>ファイルタグを編集する</value>
+    <value>ファイルタグを編集</value>
   </data>
   <data name="SettingsEditFileTags.ToolTipService.ToolTip" xml:space="preserve">
-    <value>ファイルタグを編集する</value>
+    <value>ファイルタグを編集</value>
   </data>
   <data name="SettingsEditFileTagsExpander.Title" xml:space="preserve">
-    <value>ファイルタグを編集する</value>
+    <value>ファイルタグを編集</value>
   </data>
   <data name="SettingsEnableFileTags.Title" xml:space="preserve">
-    <value>ファイルタグを有効にする</value>
-  </data>
-  <data name="InsertDiscDialog.CloseDialogButton" xml:space="preserve">
-    <value>閉じる</value>
+    <value>ファイルタグを有効化</value>
   </data>
   <data name="InsertDiscDialog.OpenDriveButton" xml:space="preserve">
     <value>ドライブを開く</value>
@@ -2624,9 +2522,6 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
   </data>
   <data name="AskCredentialDialog.PrimaryButtonText" xml:space="preserve">
     <value>実行</value>
-  </data>
-  <data name="AskCredentialDialog.SecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
   </data>
   <data name="AskCredentialDialog.Title" xml:space="preserve">
     <value>資格情報が必要です</value>
@@ -2662,7 +2557,7 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
     <value>ログの場所を開く</value>
   </data>
   <data name="LinkToFolderCaptionText" xml:space="preserve">
-    <value>{0} にリンクを作成する</value>
+    <value>{0} にリンクを作成</value>
   </data>
   <data name="NavToolbarColumnsHeader.Text" xml:space="preserve">
     <value>列</value>
@@ -2686,19 +2581,19 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
     <value>ファイル拡張子を表示</value>
   </data>
   <data name="NavToolbarShowHiddenItems.AutomationProperties.Name" xml:space="preserve">
-    <value>隠しアイテムを表示する</value>
+    <value>隠しファイルを表示</value>
   </data>
   <data name="NavToolbarShowFileExtensions.AutomationProperties.Name" xml:space="preserve">
     <value>ファイル拡張子を表示</value>
   </data>
   <data name="NavToolbarShowHiddenItemsHeader.Text" xml:space="preserve">
-    <value>隠しアイテムを表示する</value>
+    <value>隠しファイルを表示</value>
   </data>
   <data name="SettingsShowFavoritesSectionSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>お気に入りセクションを表示</value>
   </data>
   <data name="SettingsPinRecycleBinSwitch.AutomationProperties.Name" xml:space="preserve">
-    <value>ごみ箱をお気に入りに固定する</value>
+    <value>ごみ箱をお気に入りに固定</value>
   </data>
   <data name="SettingsShowCloudDrivesSectionSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>クラウドドライブセクションを表示</value>
@@ -2718,9 +2613,6 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
   <data name="SettingsDateFormatComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>日付の形式</value>
   </data>
-  <data name="SettingsDialogCloseButton.AutomationProperties.Name" xml:space="preserve">
-    <value>閉じる</value>
-  </data>
   <data name="SettingsOpenFoldersNewTabToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>新しいタブでフォルダを開く</value>
   </data>
@@ -2728,7 +2620,7 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
     <value>言語</value>
   </data>
   <data name="SettingsShowConfirmDeleteDialogToggleSwitch.AutomationProperties.Name" xml:space="preserve">
-    <value>ファイルやフォルダを削除するときに確認ダイアログを表示する</value>
+    <value>ファイルやフォルダを削除するときに確認ダイアログを表示</value>
   </data>
   <data name="TerminalApplicationsComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>ターミナルアプリケーション</value>
@@ -2743,10 +2635,10 @@ App Centerを使用して、アプリの使用状況を追跡し、バグを見�
     <value>プレビューのみを表示</value>
   </data>
   <data name="SideBarFavoritesMoveOneDown" xml:space="preserve">
-    <value>1つ下に移動します</value>
+    <value>1つ下に移動</value>
   </data>
   <data name="SideBarFavoritesMoveOneUp" xml:space="preserve">
-    <value>1つ上に移動します</value>
+    <value>1つ上に移動</value>
   </data>
   <data name="SideBarFavoritesMoveToBottom" xml:space="preserve">
     <value>一番下へ移動</value>

@@ -1,6 +1,11 @@
 ﻿using Files.Common;
 using Files.Extensions;
 using Files.Helpers;
+using Files.Services;
+using Files.UserControls;
+using Files.ViewModels;
+using Microsoft.Toolkit.Mvvm.ComponentModel;
+using Microsoft.Toolkit.Mvvm.DependencyInjection;
 using Microsoft.Toolkit.Uwp;
 using System;
 using System.Collections.Generic;
@@ -10,8 +15,14 @@ using System.Threading.Tasks;
 
 namespace Files.Filesystem
 {
-    public class LibraryManager
+    public class LibraryManager : IDisposable
     {
+        private IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
+
+        public MainViewModel MainViewModel => App.MainViewModel;
+
+        private LocationItem librarySection;
+
         public BulkConcurrentObservableCollection<LibraryLocationItem> Libraries { get; } = new BulkConcurrentObservableCollection<LibraryLocationItem>();
 
         public event EventHandler<IReadOnlyList<LibraryLocationItem>> RefreshCompleted;
@@ -86,8 +97,6 @@ namespace Files.Filesystem
             return library != null;
         }
 
-        public bool IsLibraryPath(string path) => TryGetLibrary(path, out _);
-
         public async Task<bool> CreateNewLibrary(string name)
         {
             if (!CanCreateLibrary(name).result)
@@ -111,7 +120,7 @@ namespace Files.Filesystem
                 var libItem = Libraries.FirstOrDefault(l => string.Equals(l.Path, libraryPath, StringComparison.OrdinalIgnoreCase));
                 if (libItem != null)
                 {
-                    Libraries[Libraries.IndexOf(libItem)] = libItem;
+                    Libraries[Libraries.IndexOf(libItem)] = newLib;
                 }
                 return newLib;
             }

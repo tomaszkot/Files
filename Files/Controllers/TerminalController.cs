@@ -1,12 +1,17 @@
 ﻿using Files.DataModels;
 using Files.Enums;
+using Files.Extensions;
 using Files.Filesystem;
 using Files.Helpers;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.Storage;
+using Windows.Storage.Search;
 
 namespace Files.Controllers
 {
@@ -16,25 +21,27 @@ namespace Files.Controllers
 
         private string folderPath => Path.Combine(ApplicationData.Current.LocalFolder.Path, "settings");
 
+        private StorageFileQueryResult query;
+
+        private bool suppressChangeEvent;
+
+        private string configContent;
+
         public TerminalFileModel Model { get; set; }
+
+        public event Action<TerminalController> ModelChanged;
 
         public string JsonFileName { get; } = "terminal.json";
 
-        private TerminalController()
+        public TerminalController()
         {
         }
 
-        public static Task<TerminalController> CreateInstance()
-        {
-            var instance = new TerminalController();
-            return instance.InitializeAsync();
-        }
-
-        private async Task<TerminalController> InitializeAsync()
+        public async Task InitializeAsync()
         {
             await LoadAsync();
             await GetInstalledTerminalsAsync();
-            return this;
+            await StartWatchConfigChangeAsync();
         }
 
         private async Task LoadAsync()
@@ -65,6 +72,7 @@ namespace Files.Controllers
             try
             {
                 var content = await FileIO.ReadTextAsync(JsonFile.Result);
+                configContent = content;
                 Model = JsonConvert.DeserializeObject<TerminalFileModel>(content);
                 if (Model == null)
                 {
@@ -82,74 +90,119 @@ namespace Files.Controllers
             }
         }
 
+        private async Task StartWatchConfigChangeAsync()
+        {
+            var configFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appdata:///local/settings/terminal.json"));
+            var folder = await configFile.GetParentAsync();
+            query = folder.CreateFileQuery();
+            query.ContentsChanged += Query_ContentsChanged;
+            await query.GetFilesAsync();
+        }
+
+        private async void Query_ContentsChanged(IStorageQueryResultBase sender, object args)
+        {
+            if (suppressChangeEvent)
+            {
+                suppressChangeEvent = false;
+                return;
+            }
+
+            try
+            {
+                var configFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appdata:///local/settings/terminal.json"));
+                var content = await FileIO.ReadTextAsync(configFile);
+
+                if (configContent != content)
+                {
+                    configContent = content;
+                }
+                else
+                {
+                    return;
+                }
+
+                await LoadAsync();
+                await GetInstalledTerminalsAsync();
+                CoreApplication.MainView.DispatcherQueue.TryEnqueue(() =>
+                {
+                    ModelChanged?.Invoke(this);
+                });
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
         private async Task<TerminalFileModel> GetDefaultTerminalFileModel()
         {
             try
             {
                 StorageFile defaultFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri(defaultTerminalPath));
                 var defaultContent = await FileIO.ReadTextAsync(defaultFile);
-                return JsonConvert.DeserializeObject<TerminalFileModel>(defaultContent);
+                var model = JsonConvert.DeserializeObject<TerminalFileModel>(defaultContent);
+                await GetInstalledTerminalsAsync(model);
+                model.ResetToDefaultTerminal();
+                return model;
             }
             catch
             {
                 var model = new TerminalFileModel();
-                model.Terminals.Add(new Terminal()
-                {
-                    Name = "CMD",
-                    Path = "cmd.exe",
-                    Arguments = "",
-                    Icon = ""
-                });
+                await GetInstalledTerminalsAsync(model);
                 model.ResetToDefaultTerminal();
                 return model;
             }
         }
 
-        public async Task GetInstalledTerminalsAsync()
+        private async Task GetInstalledTerminalsAsync()
         {
-            var windowsTerminal = new Terminal()
+            await GetInstalledTerminalsAsync(Model);
+            SaveModel();
+        }
+
+        private async Task GetInstalledTerminalsAsync(TerminalFileModel model)
+        {
+            var terminalDefs = new Dictionary<Terminal, bool>();
+
+            terminalDefs.Add(new Terminal()
             {
                 Name = "Windows Terminal",
                 Path = "wt.exe",
                 Arguments = "-d .",
                 Icon = ""
-            };
+            }, await IsWindowsTerminalBuildInstalled());
 
-            var fluentTerminal = new Terminal()
+            terminalDefs.Add(new Terminal()
             {
                 Name = "Fluent Terminal",
                 Path = "flute.exe",
                 Arguments = "",
                 Icon = ""
-            };
+            }, await PackageHelper.IsAppInstalledAsync("53621FSApps.FluentTerminal_87x1pks76srcp"));
 
+            terminalDefs.Add(new Terminal()
+            {
+                Name = "CMD",
+                Path = "cmd.exe",
+                Arguments = "",
+                Icon = ""
+            }, true);    // CMD will always be present (for now at least)
+
+            terminalDefs.Where(x => x.Value).ForEach(x => model.AddTerminal(x.Key));
+            terminalDefs.Where(x => !x.Value).ForEach(x => model.RemoveTerminal(x.Key));
+        }
+
+        public async static Task<bool> IsWindowsTerminalBuildInstalled()
+        {
             bool isWindowsTerminalInstalled = await PackageHelper.IsAppInstalledAsync("Microsoft.WindowsTerminal_8wekyb3d8bbwe");
             bool isWindowsTerminalPreviewInstalled = await PackageHelper.IsAppInstalledAsync("Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe");
-            bool isFluentTerminalInstalled = await PackageHelper.IsAppInstalledAsync("53621FSApps.FluentTerminal_87x1pks76srcp");
 
-            if (isWindowsTerminalInstalled || isWindowsTerminalPreviewInstalled)
-            {
-                Model.AddTerminal(windowsTerminal);
-            }
-            else
-            {
-                Model.RemoveTerminal(windowsTerminal);
-            }
-
-            if (isFluentTerminalInstalled)
-            {
-                Model.AddTerminal(fluentTerminal);
-            }
-            else
-            {
-                Model.RemoveTerminal(fluentTerminal);
-            }
-
-            SaveModel();
+            return isWindowsTerminalPreviewInstalled || isWindowsTerminalInstalled;
         }
 
         public void SaveModel()
         {
+            suppressChangeEvent = true;
             try
             {
                 using (var file = File.CreateText(Path.Combine(folderPath, JsonFileName)))

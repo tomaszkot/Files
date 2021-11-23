@@ -29,26 +29,22 @@ namespace Files.Dialogs
 
         private void UpdateDialogLayout()
         {
-            if (Window.Current.Bounds.Width <= 700)
+            if (Window.Current.Bounds.Height <= 710)
             {
-                SettingsPane.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.LeftCompact;
-                SettingsContentFrame.Width = 410;
-                Column0.Width = new GridLength(60);
+                ContainerGrid.Height = Window.Current.Bounds.Height - 70;
             }
             else
             {
-                SettingsPane.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Left;
-                SettingsContentFrame.Width = 460;
-                Column0.Width = new GridLength(0, GridUnitType.Auto);
+                ContainerGrid.Height = 640;
             }
 
-            if (Window.Current.Bounds.Height <= 600)
+            if (Window.Current.Bounds.Width <= 800)
             {
-                ContainerGrid.Height = Window.Current.Bounds.Height;
+                ContainerGrid.Width = Window.Current.Bounds.Width;
             }
             else
             {
-                ContainerGrid.Height = 600;
+                ContainerGrid.Width = 800;
             }
         }
 
@@ -60,13 +56,10 @@ namespace Files.Dialogs
             _ = selectedItemTag switch
             {
                 0 => SettingsContentFrame.Navigate(typeof(Appearance)),
-                1 => SettingsContentFrame.Navigate(typeof(OnStartup)),
-                2 => SettingsContentFrame.Navigate(typeof(Preferences)),
-                3 => SettingsContentFrame.Navigate(typeof(Sidebar)),
-                4 => SettingsContentFrame.Navigate(typeof(Multitasking)),
-                5 => SettingsContentFrame.Navigate(typeof(FilesAndFolders)),
-                6 => SettingsContentFrame.Navigate(typeof(Experimental)),
-                7 => SettingsContentFrame.Navigate(typeof(About)),
+                1 => SettingsContentFrame.Navigate(typeof(Preferences)),
+                2 => SettingsContentFrame.Navigate(typeof(Multitasking)),
+                3 => SettingsContentFrame.Navigate(typeof(Experimental)),
+                4 => SettingsContentFrame.Navigate(typeof(About)),
                 _ => SettingsContentFrame.Navigate(typeof(Appearance))
             };
         }
